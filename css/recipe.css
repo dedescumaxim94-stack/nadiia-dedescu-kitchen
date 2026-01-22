@@ -1,0 +1,273 @@
+/* =========================================
+   SINGLE RECIPE LAYOUT
+   ========================================= */
+
+/* =========================================
+   LEFT COLUMN: Intro & Hero
+   ========================================= */
+.recipe-intro {
+  grid-column: 2 / span 3;
+  grid-row: span 3;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  /* Make it stick while scrolling instructions on the right */
+  position: sticky;
+  top: 0;
+  height: fit-content;
+  padding: 1rem 2rem;
+  background-color: #d6ccc2;
+  box-shadow: inset 0 0 10px 5px #6c584c51;
+  border-radius: 8px;
+}
+
+.main-recipe-img {
+  width: 100%;
+  height: 100%; /* Big beautiful image */
+  margin: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.main-recipe-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+h2 {
+  font-size: 1.6rem;
+  margin: 0 0 1rem 2rem;
+  line-height: 1.1;
+}
+
+h3 {
+  font-size: 1.4rem;
+  margin: 0 0 1rem 2rem;
+}
+
+p {
+  font-size: 1.4rem;
+  line-height: 1.6;
+}
+
+.meta-tags {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-evenly;
+  font-weight: bold;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.4);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+/* =========================================
+   RIGHT COLUMN: Ingredients & Steps
+   ========================================= */
+
+.ingredients-container,
+.instructions-container {
+  grid-column: 5 / span 3;
+  padding: 1rem 2rem;
+  background-color: #d6ccc2;
+  border-radius: 8px;
+  box-shadow: inset 0 0 10px 5px #6c584c51;
+  height: fit-content;
+}
+
+/* --- Ingredients Visual Grid --- */
+.ingredients-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+}
+
+.ingredient-item {
+  margin: 0; /* CRITICAL: Resets the default browser margin */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  cursor: pointer; /* Shows the hand icon */
+  position: relative; /* Needed for the checkmark icon */
+  /* DEFAULT STATE: Soft Red (Meaning: "Check this!") */
+  background-color: #edede9;
+  transition: all 0.3s ease; /* Smooth color swap */
+}
+
+.ingredient-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(108, 88, 76, 0.3);
+  transition: all 0.3s ease;
+}
+
+/* --- THE "I HAVE IT" STATE (Green) --- */
+.ingredient-item.has-ingredient {
+  background-color: #a6eea8; /* Very pale green */
+  opacity: 0.8; /* Slightly dims it to show it's "done" */
+}
+
+/* --- ACCESSIBILITY ICON (The Checkmark) --- */
+/* By default, this checkmark is invisible */
+.ingredient-item::after {
+  content: "✔";
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  font-size: 14px;
+  color: #2f855a; /* Dark green */
+  opacity: 0; /* Hidden */
+  transform: scale(0);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy pop effect */
+}
+
+/* When the class is added, show the checkmark */
+.ingredient-item.has-ingredient::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.ingredient-item img {
+  width: 100%;
+  object-fit: contain;
+}
+
+/* Styling the caption area */
+.ingredient-item figcaption {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  margin: 6px 0;
+}
+
+.ingredient-name {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #6c584c;
+}
+
+.ingredient-amount {
+  font-size: 1rem;
+  color: #888;
+}
+
+/* --- Instructions List --- */
+.steps-list {
+  padding-left: 20px;
+  margin-top: 1rem;
+}
+
+.steps-list li {
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  padding-left: 10px;
+  cursor: pointer; /* Shows the hand icon */
+  position: relative; /* Needed for the checkmark icon */
+  padding: 12px;
+  border-radius: 6px;
+  transition: all 0.3s ease; /* Smooth color swap */
+}
+
+.steps-list li:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* --- THE "COMPLETED" STATE (Green) --- */
+.steps-list li.completed-step {
+  background-color: #a6eea8; /* Very pale green */
+  opacity: 0.8; /* Slightly dims it to show it's "done" */
+}
+
+/* --- ACCESSIBILITY ICON (The Checkmark) --- */
+/* By default, this checkmark is invisible */
+.steps-list li::before {
+  content: "✔";
+  position: absolute;
+  left: -20px;
+  top: 45%;
+  font-size: 16px;
+  color: #2f855a; /* Dark green */
+  opacity: 0; /* Hidden */
+  transform: scale(0);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy pop effect */
+}
+
+/* When the class is added, show the checkmark */
+.steps-list li.completed-step::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.steps-list strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.2rem;
+  color: #4a3b32; /* Slightly darker for headings */
+}
+
+/* --- Cooking Tips --- */
+.cooking-tips {
+  grid-area: 2 / 5 / span 1 / span 3;
+  background-color: #d6ccc2;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  box-shadow: inset 0 0 10px 5px #6c584c51;
+  /* margin-top: 1.5rem; */
+}
+
+.cooking-tips ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.cooking-tips li {
+  margin-bottom: 1rem;
+  padding-left: 2.4rem;
+  position: relative;
+  line-height: 1.6;
+  font-size: 1.2rem;
+}
+
+.cooking-tips li::before {
+  content: "✨";
+  position: absolute;
+  left: 0;
+  font-size: 2rem;
+}
+
+/* =========================================
+  @ Media Queries
+   ========================================= */
+
+@media (max-width: 1024px) {
+}
+
+@media (max-width: 768px) {
+}
+
+@media (max-width: 480px) {
+  .recipe-intro {
+    position: static; /* Remove sticky on mobile */
+    height: auto;
+  }
+
+  .main-recipe-img {
+    height: 200px;
+  }
+
+  .recipe-intro,
+  .ingredients-container,
+  .instructions-container {
+    grid-column: 1 / span 1;
+    padding: 1rem;
+    font-size: smaller;
+  }
+}
