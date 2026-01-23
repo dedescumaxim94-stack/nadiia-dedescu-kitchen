@@ -267,7 +267,13 @@ p {
   .ingredients-container,
   .instructions-container {
     grid-column: 1 / span 1;
+    grid-row: auto;
     padding: 1rem;
     font-size: smaller;
+  }
+
+  .cooking-tips {
+    grid-column: 1 / span 1;
+    grid-row: 2 / span 1;
   }
 }
