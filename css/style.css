@@ -5,6 +5,14 @@ a:active {
   color: inherit;
   text-decoration: none;
 }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #edede9;
+  color: #6c584c;
+}
+
 /*---------------grid container---------------*/
 .grid-container {
   display: grid;
@@ -12,8 +20,8 @@ a:active {
   grid-auto-rows: auto;
   grid-template-rows: auto;
   gap: 2rem;
-  background-color: #edede9;
 }
+
 /*---------------header---------------*/
 header {
   grid-column: 1 / -1;
@@ -29,11 +37,6 @@ header {
   border-radius: 8px;
 }
 
-.menu-icon {
-  cursor: pointer;
-  grid-column: 1;
-}
-
 h1 {
   grid-column: span 2;
   font-size: 2rem;
@@ -43,20 +46,21 @@ h1 {
 header > a {
   grid-column: 2 / span 6;
 }
+
 /*---------------side menu---------------*/
 nav.side-menu {
   position: fixed;
   top: 0;
   left: -21rem; /* Hidden by default */
   width: 20rem;
+  height: 100%;
   background-color: rgb(214, 204, 194); /* Semi-transparent for overlay */
   color: #6c584c;
   transition: left 0.5s ease;
   z-index: 1000;
   padding-top: 2rem;
-  margin: 0.5rem;
   text-align: center;
-  border-radius: 8px;
+  border-radius: 0 8px 8px 0;
   box-shadow: inset 0 0 10px 5px #6c584c51;
 }
 
@@ -76,6 +80,7 @@ nav.side-menu {
   background: none;
   cursor: pointer;
   padding: 0;
+  margin-left: 1rem;
 }
 
 .menu-list {
@@ -160,7 +165,7 @@ nav.side-menu {
 }
 
 .dropdown a:hover {
-  transform: scale(1.05);
+  transform: scale(1.2);
 }
 
 /*---------------main---------------*/
@@ -174,6 +179,7 @@ main {
   color: #6c584c;
   margin-bottom: 2rem;
 }
+
 /*---------------categories---------------*/
 .categories {
   grid-column: 2 / span 6;
@@ -194,11 +200,9 @@ main {
 }
 
 .cat-image {
-  /* display: block; */
   width: 100%;
   object-fit: cover; /* Crops image to fit the container dynamically */
   transition: transform 0.3s ease;
-  z-index: 0;
 }
 
 .cat-title {
@@ -217,8 +221,7 @@ main {
 
 /* Hover effect for a professional feel */
 .cat-card:hover {
-  transform: scale(1.05);
-  /* Slight pop effect for 2026 UI trends */
+  transform: scale(1.05); /* Slight pop effect for 2026 UI trends */
   box-shadow: 0 10px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
 }
@@ -270,7 +273,6 @@ main {
   flex-shrink: 0; /* Prevents buttons from getting squished if space is tight */
   width: 50px; /* Fixed size for buttons */
   height: 50px;
-
   /* Visuals */
   background: rgba(0, 0, 0, 0.5);
   border: none;
@@ -367,6 +369,7 @@ main {
     /* Show 1 col categories */
     grid-column: span 1;
   }
+
   .carousel-container {
     min-height: 250px;
   }
@@ -374,6 +377,7 @@ main {
   .carousel-button {
     display: none;
   }
+
   .carousel-item {
     /* Show 1.5 images */
     flex: 0 0 75%;
