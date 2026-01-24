@@ -8,7 +8,6 @@ a:active {
 
 body {
   margin: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: #edede9;
   color: #6c584c;
 }
@@ -20,6 +19,10 @@ body {
   grid-auto-rows: auto;
   grid-template-rows: auto;
   gap: 2rem;
+  width: 100vw;
+  transition:
+    margin-left 0.5s ease,
+    width 0.5s ease;
 }
 
 /*---------------header---------------*/
@@ -38,7 +41,7 @@ header {
 }
 
 h1 {
-  grid-column: span 2;
+  grid-column: 2 / span 2;
   font-size: 2rem;
   margin: 0;
 }
@@ -51,10 +54,10 @@ header > a {
 nav.side-menu {
   position: fixed;
   top: 0;
-  left: -21rem; /* Hidden by default */
+  left: -20rem; /* Hidden by default */
   width: 20rem;
   height: 100%;
-  background-color: rgb(214, 204, 194); /* Semi-transparent for overlay */
+  background-color: #d6ccc2;
   color: #6c584c;
   transition: left 0.5s ease;
   z-index: 1000;
@@ -104,6 +107,7 @@ nav.side-menu {
   color: #6c584c;
   width: 100%;
   text-align: center;
+  font-weight: bold;
   text-transform: uppercase;
 }
 
@@ -167,7 +171,14 @@ nav.side-menu {
 .dropdown a:hover {
   transform: scale(1.2);
 }
+.grid-container.menu-open {
+  margin-left: 22rem;
+  width: calc(100vw - 22rem);
+}
 
+.grid-container.menu-open .header .menu-icon-btn {
+  display: none;
+}
 /*---------------main---------------*/
 main {
   grid-column: 1 / -1;
