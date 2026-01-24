@@ -58,10 +58,55 @@ if (track) {
 }
 
 // ================================================
-//   Recipe page, action check-ingredients state
+//     Side Menu Toggle
 // ================================================
 
 document.addEventListener("DOMContentLoaded", () => {
+  const menuIcons = document.querySelectorAll(".menu-icon-btn");
+  const sideMenu = document.querySelector(".side-menu");
+  const body = document.querySelector(".grid-container");
+
+  menuIcons.forEach((icon) => {
+    icon.addEventListener("click", () => {
+      sideMenu.classList.toggle("open");
+      body.classList.toggle("menu-open");
+      // Open the first dropdown by default when menu opens
+      const firstDropdown = document.querySelector(".dropdown");
+      if (sideMenu.classList.contains("open")) {
+        firstDropdown.classList.add("open");
+      } else {
+        // Close all dropdowns when menu closes
+        document.querySelectorAll(".dropdown").forEach((drop) => drop.classList.remove("open"));
+      }
+    });
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".side-menu") && !e.target.closest(".menu-icon-btn")) {
+      sideMenu.classList.remove("open");
+      body.classList.remove("menu-open");
+      // Close all dropdowns
+      document.querySelectorAll(".dropdown").forEach((drop) => drop.classList.remove("open"));
+    }
+  });
+
+  // Dropdown toggles
+  const menuTitles = document.querySelectorAll(".menu-title");
+  menuTitles.forEach((title) => {
+    title.addEventListener("click", () => {
+      // Close all dropdowns
+      document.querySelectorAll(".dropdown").forEach((drop) => drop.classList.remove("open"));
+      // Open the clicked one
+      const dropdown = title.nextElementSibling;
+      dropdown.classList.add("open");
+    });
+  });
+
+  // ================================================
+  //   Recipe page, action check-ingredients state
+  // ================================================
+
   // 1. Select all ingredient cards
   const ingredients = document.querySelectorAll(".ingredient-item");
 
@@ -79,8 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ================================================
-  //   Recipe page, action check-steps state
-  // ================================================
+  //   Action check-steps state
 
   // 1. Select all step items
   const steps = document.querySelectorAll(".steps-list li");
