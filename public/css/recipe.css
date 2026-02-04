@@ -1,3 +1,14 @@
+/* Visually hidden for accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
 /* =========================================
    SINGLE RECIPE LAYOUT
    ========================================= */
@@ -28,6 +39,7 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: block;
 }
 
 .main-recipe-img img {
@@ -95,9 +107,9 @@ p {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   cursor: pointer; /* Shows the hand icon */
   position: relative; /* Needed for the checkmark icon */
-  /* DEFAULT STATE: Soft Red (Meaning: "Check this!") */
   background-color: #edede9;
   transition: all 0.3s ease; /* Smooth color swap */
+  display: flex;
 }
 
 .ingredient-item:hover {

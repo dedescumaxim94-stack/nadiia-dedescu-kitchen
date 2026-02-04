@@ -1,0 +1,56 @@
+<main>
+  <!-- Recipe Intro -->
+  <section class="recipe-intro">
+    <figure class="main-recipe-img">
+      <img src="<%= image %>" alt="<%= title %>" />
+    </figure>
+    <div class="intro-text">
+      <h2><%= subtitle || title %></h2>
+      <p class="recipe-desc"><%= description %></p>
+      <div class="meta-tags">
+        <% if (meta && meta.length) { meta.forEach(function(tag) { %>
+          <span><%= tag %></span>
+        <% }); } %>
+      </div>
+    </div>
+  </section>
+  <!-- Ingredients -->
+  <section class="ingredients-container">
+    <h3>Ingredients</h3>
+    <div class="ingredients-visual-grid">
+      <% ingredients.forEach(function(ingredient) { %>
+        <figure class="ingredient-item">
+          <img src="<%= ingredient.image %>" alt="<%= ingredient.name %>" />
+          <figcaption>
+            <span class="ingredient-name"><%= ingredient.name %></span>
+            <% if (ingredient.amount) { %>
+              <small class="ingredient-amount"><%= ingredient.amount %></small>
+            <% } %>
+          </figcaption>
+        </figure>
+      <% }); %>
+    </div>
+  </section>
+  <!-- Instructions -->
+  <section class="instructions-container">
+    <h3>Instructions</h3>
+    <ol class="steps-list">
+      <% instructions.forEach(function(step) { %>
+        <li>
+          <% if (step.title) { %><strong><%= step.title %></strong><% } %>
+          <%= step.text %>
+        </li>
+      <% }); %>
+    </ol>
+  </section>
+  <% if (tips && tips.length) { %>
+  <aside class="cooking-tips">
+    <h3>Tips for Perfect Ricotta Pancakes</h3>
+    <ul>
+      <% tips.forEach(function(tip) { %>
+        <li><%= tip %></li>
+      <% }); %>
+    </ul>
+  </aside>
+  <% } %>
+</main>
