@@ -34,6 +34,25 @@ const categoryTitles = {
   "new-recipes": "New Recipe Recipes",
 };
 
+const recipesByCategory = {
+  breakfast: [
+    {
+      title: "Ricotta Pancakes",
+      link: "/categories/breakfast/ricotta-pancakes",
+      image: "/src/images/breakfast/Ricotta-Pancakes.png",
+      alt: "Ricotta Pancakes",
+      description: "A classic gourmet dish featuring cheese pancakes with a soft, creamy texture...",
+      time: "25 min",
+      timeISO: "PT25M",
+    },
+  ],
+  lunch: [],
+  dinner: [],
+  dessert: [],
+  "set-menu": [],
+  "new-recipes": [],
+};
+
 // Home route
 app.get("/", (req, res) => {
   res.render("index", {
@@ -54,6 +73,7 @@ app.get("/categories/:category", (req, res) => {
     title: categoryTitles[category],
     activePage: category,
     categoryPageCSS: true,
+    recipes: recipesByCategory[category] || [],
   });
 });
 

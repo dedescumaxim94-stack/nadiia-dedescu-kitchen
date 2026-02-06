@@ -3,134 +3,30 @@ const categoryPageCSS = true;
 %>
 <main>
   <section class="recipe-container">
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="/categories/breakfast/ricotta-pancakes" class="main-link">Ricotta Pancakes</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes with a soft, creamy texture...</p>
-        <p>Ready in: <time datetime="PT25M">25 min</time></p>
-      </div>
-    </article>
-
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="#" class="main-link">Cheese Pancake</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes...</p>
-        <p>Ready in: <time datetime="PT2H">10 min</time></p>
-      </div>
-    </article>
-
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="#" class="main-link">Cheese Pancake</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes...</p>
-        <p>Ready in: <time datetime="PT2H">10 min</time></p>
-      </div>
-    </article>
-
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="#" class="main-link">Cheese Pancake</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes...</p>
-        <p>Ready in: <time datetime="PT2H">10 min</time></p>
-      </div>
-    </article>
-
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="#" class="main-link">Cheese Pancake</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes...</p>
-        <p>Ready in: <time datetime="PT2H">10 min</time></p>
-      </div>
-    </article>
-
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="#" class="main-link">Cheese Pancake</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes...</p>
-        <p>Ready in: <time datetime="PT2H">10 min</time></p>
-      </div>
-    </article>
-
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="#" class="main-link">Cheese Pancake</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes...</p>
-        <p>Ready in: <time datetime="PT2H">10 min</time></p>
-      </div>
-    </article>
-
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="#" class="main-link">Cheese Pancake</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes...</p>
-        <p>Ready in: <time datetime="PT2H">10 min</time></p>
-      </div>
-    </article>
-
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="#" class="main-link">Cheese Pancake</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes...</p>
-        <p>Ready in: <time datetime="PT2H">10 min</time></p>
-      </div>
-    </article>
-
-    <article class="recipe-card">
-      <figure>
-        <img src="/src/images/Cheese-Pancake.png" alt="Cheese Pancake" />
-      </figure>
-      <div class="recipe-content">
-        <h3>
-          <a href="#" class="main-link">Cheese Pancake</a>
-        </h3>
-        <p>A classic gourmet dish featuring cheese pancakes...</p>
-        <p>Ready in: <time datetime="PT2H">10 min</time></p>
-      </div>
-    </article>
+    <% if (recipes && recipes.length) { %>
+      <% recipes.forEach(function(recipe) { %>
+        <article class="recipe-card">
+          <figure>
+            <img src="<%= recipe.image %>" alt="<%= recipe.alt || recipe.title %>" />
+          </figure>
+          <div class="recipe-content">
+            <h3>
+              <a href="<%= recipe.link %>" class="main-link"><%= recipe.title %></a>
+            </h3>
+            <% if (recipe.description) { %>
+              <p><%= recipe.description %></p>
+            <% } %>
+            <% if (recipe.time) { %>
+              <p>
+                Ready in:
+                <time datetime="<%= recipe.timeISO || '' %>"><%= recipe.time %></time>
+              </p>
+            <% } %>
+          </div>
+        </article>
+      <% }); %>
+    <% } else { %>
+      <p>No recipes yet. Check back soon!</p>
+    <% } %>
   </section>
 </main>
