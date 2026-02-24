@@ -26,12 +26,7 @@
   gap: 0.8rem;
 }
 
-.new-recipe-form label {
-  display: grid;
-  gap: 0.35rem;
-  font-weight: 600;
-}
-
+.new-recipe-form label,
 .input-group {
   display: grid;
   gap: 0.35rem;
@@ -40,18 +35,6 @@
 
 .field-label {
   font-weight: 600;
-}
-
-.image-control {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  flex-wrap: wrap;
-}
-
-.file-name {
-  font-size: 0.9rem;
-  color: #6c584c;
 }
 
 .new-recipe-form input,
@@ -67,6 +50,34 @@
   font: inherit;
   color: #3d312a;
   background: #f5f1ed;
+}
+
+.visually-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.image-control,
+.ingredient-image-control {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.file-name {
+  max-width: 280px;
+  font-size: 0.9rem;
+  color: #6c584c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .description-field {
@@ -133,13 +144,6 @@
   flex: 0 1 180px;
 }
 
-.ingredient-image-control {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  flex-wrap: wrap;
-}
-
 .row.step-row,
 .row.tip-row {
   grid-template-columns: 1fr auto;
@@ -178,31 +182,20 @@
   color: #fff;
 }
 
-.image-trigger-btn {
-  width: 120px;
-}
-
-.visually-hidden-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-}
-
+.image-trigger-btn,
 .ingredient-remove-btn {
   width: 120px;
 }
 
-.publish-toggle {
+.new-recipe-form label.publish-toggle {
   display: inline-flex;
+  grid-template-columns: none;
   align-items: center;
   gap: 0.35rem;
   width: fit-content;
   font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .publish-toggle input {
@@ -250,5 +243,10 @@
 
   .ingredient-fields {
     flex-direction: column;
+  }
+
+  .image-control,
+  .ingredient-image-control {
+    align-items: flex-start;
   }
 }

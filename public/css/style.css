@@ -208,6 +208,9 @@ main {
   overflow: hidden;
   border-radius: 12px;
   aspect-ratio: 7 / 4; /* Optional: keeps cards at a consistent shape as they resize */
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .cat-image {
@@ -234,7 +237,6 @@ main {
 .cat-card:hover {
   transform: scale(1.05); /* Slight pop effect for 2026 UI trends */
   box-shadow: 0 10px 8px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
 }
 
 .carousel-container {
@@ -261,6 +263,7 @@ main {
   margin: 0;
   list-style: none; /* Removes bullet points */
   transition: transform 0.4s ease-in-out; /* Smooth sliding animation */
+  will-change: transform;
 }
 
 .carousel-item {

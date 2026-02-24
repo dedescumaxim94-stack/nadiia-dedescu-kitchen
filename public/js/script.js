@@ -1,223 +1,172 @@
-// ================================================
-//     Home page Carousel pictures
-// ================================================
+function initCarousel() {
+  const track = document.querySelector(".carousel-track");
+  if (!track) return;
 
-const track = document.querySelector(".carousel-track");
-
-// Only run carousel code if the carousel exists (home page only)
-if (track) {
   const nextBtn = document.querySelector(".next-btn");
   const prevBtn = document.querySelector(".prev-btn");
   const items = Array.from(track.children);
+  if (!nextBtn || !prevBtn || items.length === 0) return;
 
   let currentIndex = 0;
 
-  // 1. Function to move the carousel
   const moveToSlide = (index) => {
-    // We calculate the width of a single item dynamically
     const itemWidth = items[0].getBoundingClientRect().width;
-
-    // Move the track: index * width (negative because we slide left)
     track.style.transform = `translateX(-${index * itemWidth}px)`;
   };
 
-  // 2. Next Button Listener
+  const maxIndex = Math.max(0, items.length - 5);
+
   nextBtn.addEventListener("click", () => {
-    // Only move if we aren't at the very end
-    // (Total items minus the 5 visible ones)
-    const maxIndex = items.length - 5;
-
-    if (currentIndex < maxIndex) {
-      currentIndex++;
-      moveToSlide(currentIndex);
-    } else {
-      // Optional: Loop back to start
-      currentIndex = 0;
-      moveToSlide(currentIndex);
-    }
+    currentIndex = currentIndex < maxIndex ? currentIndex + 1 : 0;
+    moveToSlide(currentIndex);
   });
 
-  // 3. Previous Button Listener
   prevBtn.addEventListener("click", () => {
-    if (currentIndex > 0) {
-      currentIndex--;
-      moveToSlide(currentIndex);
-    } else {
-      // Optional: Loop to the very end
-      currentIndex = items.length - 5;
-      moveToSlide(currentIndex);
-    }
+    currentIndex = currentIndex > 0 ? currentIndex - 1 : maxIndex;
+    moveToSlide(currentIndex);
   });
 
-  // 4. Handle Window Resize
-  // If the user resizes the window, the image width changes.
-  // We need to update the position so it stays aligned.
   window.addEventListener("resize", () => {
     moveToSlide(currentIndex);
   });
 }
 
-// ================================================
-//     Side Menu Toggle
-// ================================================
-
-document.addEventListener("DOMContentLoaded", () => {
-  const menuIcons = document.querySelectorAll(".menu-icon-btn");
+function initSideMenu() {
   const sideMenu = document.querySelector(".side-menu");
-  const body = document.querySelector(".grid-container");
+  const gridContainer = document.querySelector(".grid-container");
+  const menuIcons = document.querySelectorAll(".menu-icon-btn");
+  if (!sideMenu || !gridContainer || menuIcons.length === 0) return;
+
+  const closeAllDropdowns = () => {
+    sideMenu.querySelectorAll(".dropdown").forEach((drop) => drop.classList.remove("open"));
+  };
+
+  const openDefaultDropdown = () => {
+    const firstDropdown = sideMenu.querySelector(".dropdown");
+    firstDropdown?.classList.add("open");
+  };
 
   menuIcons.forEach((icon) => {
     icon.addEventListener("click", () => {
+      const isOpening = !sideMenu.classList.contains("open");
       sideMenu.classList.toggle("open");
-      body.classList.toggle("menu-open");
-      // Open the first dropdown by default when menu opens
-      const firstDropdown = document.querySelector(".dropdown");
-      if (sideMenu.classList.contains("open")) {
-        firstDropdown.classList.add("open");
+      gridContainer.classList.toggle("menu-open");
+      if (isOpening) {
+        openDefaultDropdown();
       } else {
-        // Close all dropdowns when menu closes
-        document.querySelectorAll(".dropdown").forEach((drop) => drop.classList.remove("open"));
+        closeAllDropdowns();
       }
     });
   });
 
-  // Close menu when clicking outside
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".side-menu") && !e.target.closest(".menu-icon-btn")) {
-      sideMenu.classList.remove("open");
-      body.classList.remove("menu-open");
-      // Close all dropdowns
-      document.querySelectorAll(".dropdown").forEach((drop) => drop.classList.remove("open"));
+  document.addEventListener("click", (event) => {
+    if (event.target.closest(".side-menu") || event.target.closest(".menu-icon-btn")) return;
+    sideMenu.classList.remove("open");
+    gridContainer.classList.remove("menu-open");
+    closeAllDropdowns();
+  });
+
+  sideMenu.querySelectorAll(".menu-title").forEach((title) => {
+    title.addEventListener("click", () => {
+      closeAllDropdowns();
+      title.nextElementSibling?.classList.add("open");
+    });
+  });
+}
+
+function initRecipeChecklist() {
+  const canVibrate = Boolean(navigator.vibrate);
+  document.addEventListener("click", (event) => {
+    const ingredientCard = event.target.closest(".ingredient-item");
+    if (ingredientCard) {
+      ingredientCard.classList.toggle("has-ingredient");
+      if (canVibrate) navigator.vibrate(50);
+      return;
+    }
+
+    const stepItem = event.target.closest(".steps-list li");
+    if (stepItem) {
+      stepItem.classList.toggle("completed-step");
+      if (canVibrate) navigator.vibrate(50);
     }
   });
+}
 
-  // Dropdown toggles
-  const menuTitles = document.querySelectorAll(".menu-title");
-  menuTitles.forEach((title) => {
-    title.addEventListener("click", () => {
-      // Close all dropdowns
-      document.querySelectorAll(".dropdown").forEach((drop) => drop.classList.remove("open"));
-      // Open the clicked one
-      const dropdown = title.nextElementSibling;
-      dropdown.classList.add("open");
-    });
-  });
-
-  // ================================================
-  //   Recipe page, action check-ingredients state
-  // ================================================
-
-  // 1. Select all ingredient cards
-  const ingredients = document.querySelectorAll(".ingredient-item");
-
-  // 2. Loop through them and add the click event
-  ingredients.forEach((card) => {
-    card.addEventListener("click", () => {
-      // 3. Toggle the class "has-ingredient" on/off
-      card.classList.toggle("has-ingredient");
-
-      // Optional: Add a subtle vibration for mobile users (Haptic Feedback)
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-    });
-  });
-
-  // ================================================
-  //   Action check-steps state
-
-  // 1. Select all step items
-  const steps = document.querySelectorAll(".steps-list li");
-
-  // 2. Loop through them and add the click event
-  steps.forEach((step) => {
-    step.addEventListener("click", () => {
-      // 3. Toggle the class "completed-step" on/off
-      step.classList.toggle("completed-step");
-
-      // Optional: Add a subtle vibration for mobile users (Haptic Feedback)
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-    });
-  });
-
-  // ================================================
-  //   Recipe page, servings scaling
-  // ================================================
+function initServingsScaling() {
   const servingsControl = document.querySelector("[data-base-serves]");
-  if (servingsControl) {
-    const baseServes = Number(servingsControl.getAttribute("data-base-serves"));
-    const input = servingsControl.querySelector("[data-servings-input]");
-    const incBtn = servingsControl.querySelector("[data-servings-increase]");
-    const decBtn = servingsControl.querySelector("[data-servings-decrease]");
-    const amountNodes = document.querySelectorAll("[data-ingredient-amount]");
-    const prepNode = document.querySelector("[data-meta-prep]");
-    const cookNode = document.querySelector("[data-meta-cook]");
-    const servesNode = document.querySelector("[data-meta-serves]");
+  if (!servingsControl) return;
 
-    // Time grows sublinearly as servings increase.
-    const PREP_TIME_EXPONENT = 0.4;
-    const COOK_TIME_EXPONENT = 0.2;
+  const baseServes = Number(servingsControl.getAttribute("data-base-serves"));
+  const input = servingsControl.querySelector("[data-servings-input]");
+  const incBtn = servingsControl.querySelector("[data-servings-increase]");
+  const decBtn = servingsControl.querySelector("[data-servings-decrease]");
+  if (!input || !incBtn || !decBtn || !Number.isFinite(baseServes) || baseServes <= 0) return;
 
-    const formatScaledAmount = (value) => {
-      if (!Number.isFinite(value)) return "";
-      const rounded = Math.round(value * 100) / 100;
-      return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/\.?0+$/, "");
-    };
+  const amountNodes = document.querySelectorAll("[data-ingredient-amount]");
+  const prepNode = document.querySelector("[data-meta-prep]");
+  const cookNode = document.querySelector("[data-meta-cook]");
+  const servesNode = document.querySelector("[data-meta-serves]");
 
-    const updateAmounts = () => {
-      const currentServes = Number(input?.value || baseServes);
-      if (!Number.isFinite(baseServes) || baseServes <= 0 || !Number.isFinite(currentServes) || currentServes <= 0) return;
-      const ratio = currentServes / baseServes;
+  const PREP_TIME_EXPONENT = 0.4;
+  const COOK_TIME_EXPONENT = 0.2;
 
-      amountNodes.forEach((node) => {
-        const amountValue = Number(node.getAttribute("data-amount-value"));
-        const amountUnit = String(node.getAttribute("data-amount-unit") || "").trim();
-        const originalAmount = String(node.getAttribute("data-original-amount") || "").trim();
+  const formatScaledAmount = (value) => {
+    if (!Number.isFinite(value)) return "";
+    const rounded = Math.round(value * 100) / 100;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/\.?0+$/, "");
+  };
 
-        if (Number.isFinite(amountValue)) {
-          const scaledText = `${formatScaledAmount(amountValue * ratio)}${amountUnit ? ` ${amountUnit}` : ""}`;
-          node.textContent = scaledText;
-        } else {
-          node.textContent = originalAmount;
-        }
-      });
+  const updateTimeMeta = (node, icon, label, ratio, exponent) => {
+    if (!node) return;
+    const baseMinutes = Number(node.getAttribute("data-base-minutes"));
+    if (!Number.isFinite(baseMinutes) || baseMinutes <= 0) return;
+    const scaled = Math.max(1, Math.round(baseMinutes * Math.pow(ratio, exponent)));
+    node.textContent = `${icon} ${scaled} min ${label}`;
+  };
 
-      if (servesNode) {
-        servesNode.textContent = `👥 Serves ${currentServes}`;
+  const updateAmounts = () => {
+    const currentServes = Number(input.value || baseServes);
+    if (!Number.isFinite(currentServes) || currentServes <= 0) return;
+    const ratio = currentServes / baseServes;
+
+    amountNodes.forEach((node) => {
+      const amountValue = Number(node.getAttribute("data-amount-value"));
+      const amountUnit = String(node.getAttribute("data-amount-unit") || "").trim();
+      const originalAmount = String(node.getAttribute("data-original-amount") || "").trim();
+
+      if (Number.isFinite(amountValue)) {
+        node.textContent = `${formatScaledAmount(amountValue * ratio)}${amountUnit ? ` ${amountUnit}` : ""}`;
+      } else {
+        node.textContent = originalAmount;
       }
-
-      const updateTimeMeta = (node, icon, label, exponent) => {
-        if (!node) return;
-        const baseMinutes = Number(node.getAttribute("data-base-minutes"));
-        if (!Number.isFinite(baseMinutes) || baseMinutes <= 0) return;
-        const scaled = Math.max(1, Math.round(baseMinutes * Math.pow(ratio, exponent)));
-        node.textContent = `${icon} ${scaled} min ${label}`;
-      };
-
-      updateTimeMeta(prepNode, "⏱", "Prep", PREP_TIME_EXPONENT);
-      updateTimeMeta(cookNode, "🔥", "Cook", COOK_TIME_EXPONENT);
-    };
-
-    incBtn?.addEventListener("click", () => {
-      const next = Math.max(1, Number(input?.value || 1) + 1);
-      if (input) input.value = String(next);
-      updateAmounts();
     });
 
-    decBtn?.addEventListener("click", () => {
-      const next = Math.max(1, Number(input?.value || 1) - 1);
-      if (input) input.value = String(next);
-      updateAmounts();
-    });
+    if (servesNode) servesNode.textContent = `👥 Serves ${currentServes}`;
+    updateTimeMeta(prepNode, "⏱", "Prep", ratio, PREP_TIME_EXPONENT);
+    updateTimeMeta(cookNode, "🔥", "Cook", ratio, COOK_TIME_EXPONENT);
+  };
 
-    input?.addEventListener("input", () => {
-      const parsed = Math.max(1, Math.round(Number(input.value || "1")));
-      input.value = String(parsed);
-      updateAmounts();
-    });
-
+  incBtn.addEventListener("click", () => {
+    input.value = String(Math.max(1, Number(input.value || 1) + 1));
     updateAmounts();
-  }
+  });
+
+  decBtn.addEventListener("click", () => {
+    input.value = String(Math.max(1, Number(input.value || 1) - 1));
+    updateAmounts();
+  });
+
+  input.addEventListener("input", () => {
+    input.value = String(Math.max(1, Math.round(Number(input.value || "1"))));
+    updateAmounts();
+  });
+
+  updateAmounts();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initCarousel();
+  initSideMenu();
+  initRecipeChecklist();
+  initServingsScaling();
 });

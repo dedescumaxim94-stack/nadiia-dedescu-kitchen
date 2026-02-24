@@ -49,18 +49,22 @@
   display: block;
 }
 
-h2 {
+.recipe-intro h2 {
   font-size: 1.6rem;
-  margin: 0 0 1rem 2rem;
+  margin: 0 0 1rem;
   line-height: 1.1;
 }
 
-h3 {
+.ingredients-container h3,
+.instructions-container h3,
+.cooking-tips h3 {
   font-size: 1.4rem;
-  margin: 0 0 1rem 2rem;
+  margin: 0 0 1rem;
 }
 
-p {
+.recipe-intro p,
+.instructions-container p,
+.cooking-tips p {
   font-size: 1.4rem;
   line-height: 1.6;
 }
@@ -157,14 +161,16 @@ p {
   cursor: pointer; /* Shows the hand icon */
   position: relative; /* Needed for the checkmark icon */
   background-color: #edede9;
-  transition: all 0.3s ease; /* Smooth color swap */
-  display: flex;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    background-color 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .ingredient-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(108, 88, 76, 0.3);
-  transition: all 0.3s ease;
 }
 
 /* --- THE "I HAVE IT" STATE (Green) --- */
@@ -228,17 +234,17 @@ p {
   margin-bottom: 1.5rem;
   font-size: 1.2rem;
   line-height: 1.6;
-  padding-left: 10px;
   cursor: pointer; /* Shows the hand icon */
   position: relative; /* Needed for the checkmark icon */
   padding: 12px;
   border-radius: 6px;
-  transition: all 0.3s ease; /* Smooth color swap */
+  transition:
+    background-color 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .steps-list li:hover {
   background-color: rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
 }
 
 /* --- THE "COMPLETED" STATE (Green) --- */

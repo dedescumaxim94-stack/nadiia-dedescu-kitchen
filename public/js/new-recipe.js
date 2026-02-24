@@ -6,12 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const ingredientsList = document.getElementById("ingredients-list");
   const stepsList = document.getElementById("steps-list");
   const tipsList = document.getElementById("tips-list");
-  const titleInput = form.querySelector('input[name="title"]');
-  const slugInput = form.querySelector('input[name="slug"]');
   const recipeImageInput = form.querySelector('input[name="recipe_image"]');
   const recipeImageName = form.querySelector("[data-recipe-image-name]");
-
-  let slugTouched = false;
 
   const slugify = (value = "") =>
     value
@@ -28,6 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
       reader.onerror = () => reject(new Error("Failed to read file"));
       reader.readAsDataURL(file);
     });
+
+  const setFileName = (el, file) => {
+    if (!el) return;
+    el.textContent = file?.name || "No file selected";
+  };
 
   function ingredientRow() {
     const row = document.createElement("div");
@@ -81,6 +82,11 @@ document.addEventListener("DOMContentLoaded", () => {
     statusEl.className = `form-status ${type || ""}`.trim();
   }
 
+  function readRequiredImage(file, message) {
+    if (!file) throw new Error(message);
+    return fileToDataUrl(file);
+  }
+
   document.getElementById("add-ingredient")?.addEventListener("click", () => {
     ingredientsList.appendChild(ingredientRow());
   });
@@ -118,25 +124,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (target.name === "ingredient_image") {
       const nameEl = target.closest(".ingredient-image-control")?.querySelector("[data-image-name]");
-      if (nameEl) nameEl.textContent = target.files?.[0]?.name || "No file selected";
+      setFileName(nameEl, target.files?.[0]);
       return;
     }
   });
 
   recipeImageInput?.addEventListener("change", () => {
-    if (!recipeImageName) return;
-    recipeImageName.textContent = recipeImageInput.files?.[0]?.name || "No file selected";
-  });
-
-  slugInput?.addEventListener("input", () => {
-    slugTouched = true;
-  });
-
-  titleInput?.addEventListener("input", () => {
-    if (!slugInput) return;
-    if (!slugTouched || !slugInput.value.trim()) {
-      slugInput.value = slugify(titleInput.value);
-    }
+    setFileName(recipeImageName, recipeImageInput.files?.[0]);
   });
 
   ingredientsList.appendChild(ingredientRow());
@@ -146,17 +140,12 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     setStatus("Saving recipe...", "");
 
-    const recipeImageFile = form.querySelector('input[name="recipe_image"]')?.files?.[0] || null;
-    if (!recipeImageFile) {
-      setStatus("Recipe image is required.", "error");
-      return;
-    }
-
     let recipeImageBase64 = "";
     try {
-      recipeImageBase64 = await fileToDataUrl(recipeImageFile);
-    } catch {
-      setStatus("Could not read recipe image.", "error");
+      const recipeImageFile = form.querySelector('input[name="recipe_image"]')?.files?.[0] || null;
+      recipeImageBase64 = await readRequiredImage(recipeImageFile, "Recipe image is required.");
+    } catch (error) {
+      setStatus(error.message || "Could not read recipe image.", "error");
       return;
     }
 
@@ -168,28 +157,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const amountValueInput = row.querySelector('input[name="ingredient_amount_value"]')?.value;
       const amountUnit = row.querySelector('input[name="ingredient_amount_unit"]')?.value.trim() || "";
       const imageFile = row.querySelector('input[name="ingredient_image"]')?.files?.[0] || null;
+      const amountValue = Number(amountValueInput);
 
       if (!amountValueInput || !amountUnit) {
         setStatus(`Amount and unit are required for ingredient "${name}".`, "error");
         return;
       }
 
-      if (!imageFile) {
-        setStatus(`Image is required for ingredient "${name}".`, "error");
+      if (!Number.isFinite(amountValue) || amountValue < 0) {
+        setStatus(`Amount for ingredient "${name}" must be a valid number.`, "error");
         return;
       }
 
       let imageBase64 = "";
       try {
-        imageBase64 = await fileToDataUrl(imageFile);
-      } catch {
-        setStatus(`Could not read image for ingredient "${name}".`, "error");
+        imageBase64 = await readRequiredImage(imageFile, `Image is required for ingredient "${name}".`);
+      } catch (error) {
+        setStatus(error.message || `Could not read image for ingredient "${name}".`, "error");
         return;
       }
 
       ingredients.push({
         name,
-        amount_value: Number(amountValueInput),
+        amount_value: amountValue,
         amount_unit: amountUnit,
         image_base64: imageBase64,
       });
@@ -207,6 +197,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }))
       .filter((item) => item.body.length > 0);
 
+    if (steps.length === 0) {
+      setStatus("Add at least one instruction step.", "error");
+      return;
+    }
+
     const tips = [...form.querySelectorAll("[data-tip-row]")]
       .map((row) => ({ tip: row.querySelector('textarea[name="tip_text"]')?.value.trim() || "" }))
       .filter((item) => item.tip.length > 0);
@@ -214,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = {
       category: form.querySelector('select[name="category"]')?.value,
       title: form.querySelector('input[name="title"]')?.value.trim(),
-      slug: form.querySelector('input[name="slug"]')?.value.trim(),
+      slug: slugify(form.querySelector('input[name="title"]')?.value || ""),
       subtitle: form.querySelector('input[name="subtitle"]')?.value.trim(),
       description: form.querySelector('textarea[name="description"]')?.value.trim(),
       recipe_image_base64: recipeImageBase64,
