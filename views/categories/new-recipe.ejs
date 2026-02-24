@@ -1,0 +1,98 @@
+<main>
+  <section class="new-recipe-shell">
+    <header class="new-recipe-header">
+      <h2>Add New Recipe</h2>
+      <p>Create a recipe with uploaded images, ingredients, steps, and tips.</p>
+    </header>
+
+    <form id="new-recipe-form" class="new-recipe-form" novalidate>
+      <div class="form-grid">
+        <label>
+          Category
+          <select name="category" required>
+            <% categories.forEach(function(category) { %>
+              <option value="<%= category.slug %>"><%= category.title %></option>
+            <% }); %>
+          </select>
+        </label>
+
+        <label>
+          Recipe Title
+          <input type="text" name="title" required placeholder="Ricotta Pancakes" />
+        </label>
+
+        <input type="hidden" name="slug" />
+
+        <label>
+          Subtitle
+          <input type="text" name="subtitle" placeholder="Optional short subtitle" />
+        </label>
+
+        <div class="input-group">
+          <span class="field-label">Recipe Image</span>
+          <div class="image-control">
+            <button type="button" class="outline-btn image-trigger-btn" data-recipe-image-trigger>+ Add Image</button>
+            <span class="file-name" data-recipe-image-name>No file selected</span>
+            <input class="visually-hidden-input" type="file" name="recipe_image" accept="image/*" required />
+          </div>
+        </div>
+
+        <label>
+          Prep Minutes
+          <input type="number" name="prep_minutes" min="0" placeholder="10" />
+        </label>
+
+        <label>
+          Cook Minutes
+          <input type="number" name="cook_minutes" min="0" placeholder="15" />
+        </label>
+
+        <label>
+          Serves
+          <input type="number" name="serves" min="1" placeholder="4" />
+        </label>
+      </div>
+
+      <label class="description-field">
+        Description
+        <textarea name="description" rows="4" required placeholder="Write the recipe description..."></textarea>
+      </label>
+
+      <section class="builder-section" aria-label="Ingredients">
+        <div class="section-head">
+          <h3>Ingredients</h3>
+          <button type="button" id="add-ingredient" class="outline-btn">+ Ingredient</button>
+        </div>
+        <div id="ingredients-list" class="list-stack"></div>
+      </section>
+
+      <section class="builder-section" aria-label="Instructions">
+        <div class="section-head">
+          <h3>Instructions</h3>
+          <button type="button" id="add-step" class="outline-btn">+ Step</button>
+        </div>
+        <div id="steps-list" class="list-stack"></div>
+      </section>
+
+      <section class="builder-section" aria-label="Tips">
+        <div class="section-head">
+          <h3>Tips</h3>
+          <button type="button" id="add-tip" class="outline-btn">+ Tip</button>
+        </div>
+        <div id="tips-list" class="list-stack"></div>
+      </section>
+
+      <label class="publish-toggle">
+        <input type="checkbox" name="is_published" checked />
+        <span>Publish recipe now</span>
+      </label>
+      <p class="publish-help">Turn this off to save as draft and publish later.</p>
+
+      <div class="form-actions">
+        <button type="submit" class="primary-btn">Create Recipe</button>
+      </div>
+
+      <p id="form-status" class="form-status" aria-live="polite"></p>
+    </form>
+  </section>
+</main>

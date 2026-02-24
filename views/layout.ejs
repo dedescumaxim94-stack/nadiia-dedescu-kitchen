@@ -11,6 +11,9 @@
   <% if (typeof recipePageCSS !== 'undefined' && recipePageCSS) { %>
     <link rel="stylesheet" href="/css/recipe.css" />
   <% } %>
+  <% if (typeof newRecipePageCSS !== 'undefined' && newRecipePageCSS) { %>
+    <link rel="stylesheet" href="/css/new-recipe.css" />
+  <% } %>
 </head>
 
 <body>
@@ -72,5 +75,8 @@
   </div>
 
   <script src="/js/script.js"></script>
+  <% if (typeof newRecipePageJS !== 'undefined' && newRecipePageJS) { %>
+    <script src="/js/new-recipe.js"></script>
+  <% } %>
 </body>
 </html>

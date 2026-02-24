@@ -8,15 +8,31 @@
       <h2><%= subtitle || title %></h2>
       <p class="recipe-desc"><%= description %></p>
       <div class="meta-tags">
-        <% if (meta && meta.length) { meta.forEach(function(tag) { %>
-          <span><%= tag %></span>
-        <% }); } %>
+        <% if (prepMinutes !== null && prepMinutes !== undefined) { %>
+          <span data-meta-prep data-base-minutes="<%= prepMinutes %>">⏱ <%= prepMinutes %> min Prep</span>
+        <% } %>
+        <% if (cookMinutes !== null && cookMinutes !== undefined) { %>
+          <span data-meta-cook data-base-minutes="<%= cookMinutes %>">🔥 <%= cookMinutes %> min Cook</span>
+        <% } %>
+        <% if (serves) { %>
+          <span data-meta-serves>👥 Serves <%= serves %></span>
+        <% } %>
       </div>
     </div>
   </section>
   <!-- Ingredients -->
   <section class="ingredients-container">
-    <h3>Ingredients</h3>
+    <div class="ingredients-header">
+      <h3>Ingredients</h3>
+      <% if (serves) { %>
+        <div class="servings-control" data-base-serves="<%= serves %>">
+          <span>Serves</span>
+          <button type="button" class="servings-btn" data-servings-decrease>-</button>
+          <input type="number" min="1" step="1" value="<%= serves %>" class="servings-input" data-servings-input />
+          <button type="button" class="servings-btn" data-servings-increase>+</button>
+        </div>
+      <% } %>
+    </div>
     <div class="ingredients-visual-grid">
       <% ingredients.forEach(function(ingredient) { %>
         <figure class="ingredient-item">
@@ -24,7 +40,13 @@
           <figcaption>
             <span class="ingredient-name"><%= ingredient.name %></span>
             <% if (ingredient.amount) { %>
-              <small class="ingredient-amount"><%= ingredient.amount %></small>
+              <small
+                class="ingredient-amount"
+                data-ingredient-amount
+                data-amount-value="<%= ingredient.amountValue ?? '' %>"
+                data-amount-unit="<%= ingredient.amountUnit ?? '' %>"
+                data-original-amount="<%= ingredient.amount %>"
+              ><%= ingredient.amount %></small>
             <% } %>
           </figcaption>
         </figure>

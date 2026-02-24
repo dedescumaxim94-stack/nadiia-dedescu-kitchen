@@ -1,0 +1,254 @@
+.new-recipe-shell {
+  grid-column: 2 / span 6;
+  background: #d6ccc2;
+  border-radius: 8px;
+  box-shadow: inset 0 0 10px 5px #6c584c51;
+  padding: 1.5rem;
+}
+
+.new-recipe-header h2 {
+  margin: 0;
+}
+
+.new-recipe-header p {
+  margin: 0.5rem 0 1.5rem;
+  font-size: 1rem;
+}
+
+.new-recipe-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.new-recipe-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.input-group {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.field-label {
+  font-weight: 600;
+}
+
+.image-control {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.file-name {
+  font-size: 0.9rem;
+  color: #6c584c;
+}
+
+.new-recipe-form input,
+.new-recipe-form select,
+.new-recipe-form textarea,
+.row input,
+.row textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #b8aa9e;
+  border-radius: 6px;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: #3d312a;
+  background: #f5f1ed;
+}
+
+.description-field {
+  margin-top: 0.25rem;
+}
+
+.builder-section {
+  background: #ede7e1;
+  border: 1px solid #cabeb3;
+  border-radius: 8px;
+  padding: 0.9rem;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.section-head h3 {
+  margin: 0;
+}
+
+.list-stack {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.ingredient-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.ingredient-main {
+  flex: 1;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ingredient-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ingredient-fields input[name="ingredient_name"] {
+  flex: 1 1 220px;
+}
+
+.ingredient-fields input[name="ingredient_amount_value"] {
+  flex: 0 1 160px;
+}
+
+.ingredient-fields input[name="ingredient_amount_unit"] {
+  flex: 0 1 180px;
+}
+
+.ingredient-image-control {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.row.step-row,
+.row.tip-row {
+  grid-template-columns: 1fr auto;
+}
+
+.row.step-row textarea,
+.row.tip-row textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.step-fields {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.remove-btn,
+.outline-btn,
+.primary-btn {
+  border: 1px solid #6c584c;
+  border-radius: 6px;
+  background: #f5f1ed;
+  color: #6c584c;
+  padding: 0.55rem 0.8rem;
+  min-height: 42px;
+  min-width: 120px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-align: center;
+}
+
+.primary-btn {
+  background: #6c584c;
+  color: #fff;
+}
+
+.image-trigger-btn {
+  width: 120px;
+}
+
+.visually-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.ingredient-remove-btn {
+  width: 120px;
+}
+
+.publish-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  font-weight: 600;
+}
+
+.publish-toggle input {
+  width: auto;
+  margin: 0;
+}
+
+.publish-help {
+  margin: -0.6rem 0 0;
+  font-size: 0.92rem;
+  color: #6c584c;
+}
+
+.form-status {
+  min-height: 1.2rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.form-status.error {
+  color: #8f2018;
+}
+
+.form-status.success {
+  color: #1e6b2a;
+}
+
+@media (max-width: 768px) {
+  .new-recipe-shell {
+    grid-column: 1 / -1;
+    border-radius: 0;
+  }
+
+  .form-grid,
+  .row,
+  .row.step-row,
+  .row.tip-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ingredient-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ingredient-fields {
+    flex-direction: column;
+  }
+}

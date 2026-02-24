@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import { randomUUID } from "crypto";
 import { fileURLToPath } from "url";
 import expressEjsLayouts from "express-ejs-layouts";
 
@@ -7,15 +8,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
-// Set EJS as the view engine
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-app.use(expressEjsLayouts);
-app.set("layout", "layout");
-
-// Serve static files (CSS, JS, images) without caching
+// Disable browser caching while developing locally.
 app.use((req, res, next) => {
   res.set("Cache-Control", "no-cache, no-store, must-revalidate");
   res.set("Pragma", "no-cache");
@@ -23,9 +18,16 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.static(path.join(__dirname, "public")));
+app.use(express.urlencoded({ extended: true, limit: "60mb" }));
+app.use(express.json({ limit: "60mb" }));
 
-// Category titles mapping
-const categoryTitles = {
+// Set EJS as the view engine
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use(expressEjsLayouts);
+app.set("layout", "layout");
+
+const fallbackCategoryTitles = {
   breakfast: "Breakfast Recipes",
   lunch: "Lunch Recipes",
   dinner: "Dinner Recipes",
@@ -34,7 +36,7 @@ const categoryTitles = {
   "new-recipes": "New Recipe Recipes",
 };
 
-const recipesByCategory = {
+const fallbackRecipesByCategory = {
   breakfast: [
     {
       title: "Ricotta Pancakes",
@@ -53,33 +55,8 @@ const recipesByCategory = {
   "new-recipes": [],
 };
 
-// Home route
-app.get("/", (req, res) => {
-  res.render("index", {
-    title: "Categories",
-    activePage: "home",
-  });
-});
-
-// Dynamic category routes
-app.get("/categories/:category", (req, res) => {
-  const { category } = req.params;
-
-  if (!categoryTitles[category]) {
-    return res.status(404).render("404", { title: "Page Not Found" });
-  }
-
-  res.render("categories/category", {
-    title: categoryTitles[category],
-    activePage: category,
-    categoryPageCSS: true,
-    recipes: recipesByCategory[category] || [],
-  });
-});
-
-// Recipe detail route
-app.get("/categories/breakfast/ricotta-pancakes", (req, res) => {
-  res.render("categories/recipe", {
+const fallbackRecipeDetails = {
+  "breakfast/ricotta-pancakes": {
     title: "Ricotta Pancakes",
     subtitle: "Gourmet Ricotta Pancakes",
     description:
@@ -87,15 +64,18 @@ app.get("/categories/breakfast/ricotta-pancakes", (req, res) => {
     image: "/src/images/breakfast/Ricotta-Pancakes.png",
     activePage: "breakfast",
     recipePageCSS: true,
+    serves: 4,
+    prepMinutes: 10,
+    cookMinutes: 15,
     meta: ["⏱ 10 min Prep", "🔥 15 min Cook", "👥 Serves 4"],
     ingredients: [
-      { name: "Ricotta", image: "/src/images/ingredients/ricota-cheese.png", amount: "1 cup" },
-      { name: "Eggs", image: "/src/images/ingredients/egg.png", amount: "1 large" },
-      { name: "Sugar", image: "/src/images/ingredients/sugar.png", amount: "1.5 tbsp" },
-      { name: "Vanilla Sugar", image: "/src/images/ingredients/vanilla-sugar.png", amount: "1 tsp" },
-      { name: "All-purpose Flour", image: "/src/images/ingredients/all-purpose-flour.png", amount: "4 tbsp" },
-      { name: "Baking Powder", image: "/src/images/ingredients/baking-powder.png", amount: "1/2 tsp" },
-      { name: "Lemon", image: "/src/images/ingredients/lemon.png", amount: "1/4 tsp" },
+      { name: "Ricotta", image: "/src/images/ingredients/ricota-cheese.png", amountValue: 1, amountUnit: "cup", amount: "1 cup" },
+      { name: "Eggs", image: "/src/images/ingredients/egg.png", amountValue: 1, amountUnit: "large", amount: "1 large" },
+      { name: "Sugar", image: "/src/images/ingredients/sugar.png", amountValue: 1.5, amountUnit: "tbsp", amount: "1.5 tbsp" },
+      { name: "Vanilla Sugar", image: "/src/images/ingredients/vanilla-sugar.png", amountValue: 1, amountUnit: "tsp", amount: "1 tsp" },
+      { name: "All-purpose Flour", image: "/src/images/ingredients/all-purpose-flour.png", amountValue: 4, amountUnit: "tbsp", amount: "4 tbsp" },
+      { name: "Baking Powder", image: "/src/images/ingredients/baking-powder.png", amountValue: 0.5, amountUnit: "tsp", amount: "1/2 tsp" },
+      { name: "Lemon", image: "/src/images/ingredients/lemon.png", amountValue: 0.25, amountUnit: "tsp", amount: "1/4 tsp" },
     ],
     instructions: [
       {
@@ -122,6 +102,407 @@ app.get("/categories/breakfast/ricotta-pancakes", (req, res) => {
       "Shaping the pancakes with slightly wet hands makes the process much easier.",
       "Cook the pancakes over medium heat, not high. Otherwise, they may brown too quickly on the outside without cooking through.",
     ],
+  },
+};
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let createClient = null;
+try {
+  ({ createClient } = await import("@supabase/supabase-js"));
+} catch {
+  console.log("@supabase/supabase-js is not installed. Using static fallback data.");
+}
+
+const supabaseReadKey = supabaseAnonKey || supabaseServiceRoleKey;
+const supabaseReadEnabled = Boolean(createClient && supabaseUrl && supabaseReadKey);
+const supabaseWriteEnabled = Boolean(createClient && supabaseUrl && supabaseServiceRoleKey);
+
+const supabase = supabaseReadEnabled
+  ? createClient(supabaseUrl, supabaseReadKey, { auth: { persistSession: false, autoRefreshToken: false } })
+  : null;
+const supabaseAdmin = supabaseWriteEnabled
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
+  : null;
+
+if (!supabaseReadEnabled) {
+  console.log("Supabase read env vars not set or Supabase client missing. Using static fallback data.");
+}
+
+if (!supabaseWriteEnabled) {
+  console.log("Supabase service role key missing. Recipe write API is disabled.");
+}
+
+function toSlug(value = "") {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function parseNumberOrNull(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function buildRecipeMeta(prepMinutes, cookMinutes, serves) {
+  const meta = [];
+  if (prepMinutes !== null && prepMinutes !== undefined) meta.push(`⏱ ${prepMinutes} min Prep`);
+  if (cookMinutes !== null && cookMinutes !== undefined) meta.push(`🔥 ${cookMinutes} min Cook`);
+  if (serves !== null && serves !== undefined) meta.push(`👥 Serves ${serves}`);
+  return meta;
+}
+
+function mapAmount(row) {
+  if (row.amount_text) return row.amount_text;
+  if (row.amount_value !== null && row.amount_value !== undefined && row.amount_unit) {
+    return `${row.amount_value} ${row.amount_unit}`;
+  }
+  if (row.amount_value !== null && row.amount_value !== undefined) return `${row.amount_value}`;
+  return null;
+}
+
+function extensionFromMime(contentType) {
+  const map = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/svg+xml": "svg",
+  };
+  return map[contentType] || null;
+}
+
+function parseImageDataUrl(dataUrl, fieldName) {
+  const match = String(dataUrl || "").match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([a-zA-Z0-9+/=]+)$/);
+  if (!match) {
+    throw new Error(`${fieldName} must be a valid base64 image.`);
+  }
+  const contentType = match[1];
+  const extension = extensionFromMime(contentType);
+  if (!extension) {
+    throw new Error(`${fieldName} has unsupported image type: ${contentType}.`);
+  }
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length) {
+    throw new Error(`${fieldName} is empty.`);
+  }
+  if (buffer.length > 15 * 1024 * 1024) {
+    throw new Error(`${fieldName} is too large. Max 15MB.`);
+  }
+  return { buffer, contentType, extension };
+}
+
+async function uploadImageOrThrow({ bucket, folder, fileBase64, fieldName }) {
+  if (!supabaseAdmin) throw new Error("Supabase admin client is unavailable.");
+  const { buffer, contentType, extension } = parseImageDataUrl(fileBase64, fieldName);
+  const filePath = `${folder}/${Date.now()}-${randomUUID()}.${extension}`;
+  const { error } = await supabaseAdmin.storage.from(bucket).upload(filePath, buffer, {
+    contentType,
+    upsert: false,
+  });
+  if (error) throw new Error(`Upload failed for ${fieldName}: ${error.message}`);
+
+  const { data: publicUrlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath);
+  return publicUrlData.publicUrl;
+}
+
+async function getCategoryBySlug(categorySlug) {
+  if (!supabaseReadEnabled) {
+    const title = fallbackCategoryTitles[categorySlug];
+    return title ? { slug: categorySlug, title } : null;
+  }
+
+  const { data, error } = await supabase.from("categories").select("slug, title").eq("slug", categorySlug).maybeSingle();
+  if (error) {
+    console.error("Supabase category lookup failed:", error.message);
+    const title = fallbackCategoryTitles[categorySlug];
+    return title ? { slug: categorySlug, title } : null;
+  }
+  return data;
+}
+
+async function getFormCategories() {
+  if (!supabaseReadEnabled) {
+    return Object.entries(fallbackCategoryTitles)
+      .filter(([slug]) => slug !== "new-recipes")
+      .map(([slug, title]) => ({ slug, title }));
+  }
+
+  const { data, error } = await supabase.from("categories").select("slug, title").order("title");
+  if (error) {
+    console.error("Supabase categories list failed:", error.message);
+    return Object.entries(fallbackCategoryTitles)
+      .filter(([slug]) => slug !== "new-recipes")
+      .map(([slug, title]) => ({ slug, title }));
+  }
+
+  return (data || []).filter((c) => c.slug !== "new-recipes");
+}
+
+async function getRecipesByCategory(categorySlug) {
+  if (!supabaseReadEnabled) return fallbackRecipesByCategory[categorySlug] || [];
+
+  const { data, error } = await supabase
+    .from("recipes")
+    .select("slug, title, description, image_path, prep_minutes, cook_minutes, categories!inner(slug)")
+    .eq("categories.slug", categorySlug)
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Supabase recipes list failed:", error.message);
+    return fallbackRecipesByCategory[categorySlug] || [];
+  }
+
+  return (data || []).map((recipe) => {
+    const totalMinutes = (recipe.prep_minutes || 0) + (recipe.cook_minutes || 0);
+    return {
+      title: recipe.title,
+      link: `/categories/${categorySlug}/${recipe.slug}`,
+      image: recipe.image_path || "",
+      alt: recipe.title,
+      description: recipe.description,
+      time: totalMinutes > 0 ? `${totalMinutes} min` : null,
+      timeISO: totalMinutes > 0 ? `PT${totalMinutes}M` : null,
+    };
+  });
+}
+
+async function getRecipeDetails(categorySlug, recipeSlug) {
+  if (!supabaseReadEnabled) return fallbackRecipeDetails[`${categorySlug}/${recipeSlug}`] || null;
+
+  const { data: recipe, error: recipeError } = await supabase
+    .from("recipes")
+    .select("id, title, subtitle, description, image_path, prep_minutes, cook_minutes, serves, categories!inner(slug)")
+    .eq("categories.slug", categorySlug)
+    .eq("slug", recipeSlug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (recipeError) {
+    console.error("Supabase recipe detail failed:", recipeError.message);
+    return fallbackRecipeDetails[`${categorySlug}/${recipeSlug}`] || null;
+  }
+
+  if (!recipe) return null;
+
+  const [ingredientsRes, stepsRes, tipsRes] = await Promise.all([
+    supabase
+      .from("recipe_ingredients")
+      .select("position, amount_text, amount_value, amount_unit, ingredients(name, image_path)")
+      .eq("recipe_id", recipe.id)
+      .order("position", { ascending: true }),
+    supabase.from("recipe_steps").select("step_number, title, body").eq("recipe_id", recipe.id).order("step_number", { ascending: true }),
+    supabase.from("recipe_tips").select("position, tip").eq("recipe_id", recipe.id).order("position", { ascending: true }),
+  ]);
+
+  if (ingredientsRes.error || stepsRes.error || tipsRes.error) {
+    console.error("Supabase nested detail failed:", ingredientsRes.error?.message || stepsRes.error?.message || tipsRes.error?.message);
+    return fallbackRecipeDetails[`${categorySlug}/${recipeSlug}`] || null;
+  }
+
+  return {
+    title: recipe.title,
+    subtitle: recipe.subtitle || recipe.title,
+    description: recipe.description,
+    image: recipe.image_path || "",
+    activePage: categorySlug,
+    recipePageCSS: true,
+    serves: recipe.serves,
+    prepMinutes: recipe.prep_minutes,
+    cookMinutes: recipe.cook_minutes,
+    meta: buildRecipeMeta(recipe.prep_minutes, recipe.cook_minutes, recipe.serves),
+    ingredients: (ingredientsRes.data || []).map((item) => ({
+      name: item.ingredients?.name || "Ingredient",
+      image: item.ingredients?.image_path || "",
+      amountValue: item.amount_value,
+      amountUnit: item.amount_unit || null,
+      amountText: item.amount_text || null,
+      amount: mapAmount(item),
+    })),
+    instructions: (stepsRes.data || []).map((step) => ({
+      title: step.title,
+      text: step.body,
+    })),
+    tips: (tipsRes.data || []).map((tipItem) => tipItem.tip),
+  };
+}
+
+// Home route
+app.get("/", (req, res) => {
+  res.render("index", {
+    title: "Categories",
+    activePage: "home",
+  });
+});
+
+app.get("/categories/new-recipes", async (req, res) => {
+  const categories = await getFormCategories();
+  res.render("categories/new-recipe", {
+    title: "Add New Recipe",
+    activePage: "new-recipes",
+    newRecipePageCSS: true,
+    newRecipePageJS: true,
+    categories,
+  });
+});
+
+// Recipe detail route
+app.get("/categories/:category/:recipe", async (req, res) => {
+  const { category, recipe } = req.params;
+  const recipeData = await getRecipeDetails(category, recipe);
+  if (!recipeData) return res.status(404).send("Recipe not found");
+  return res.render("categories/recipe", recipeData);
+});
+
+// Dynamic category routes
+app.get("/categories/:category", async (req, res) => {
+  const { category } = req.params;
+  const categoryData = await getCategoryBySlug(category);
+
+  if (!categoryData) return res.status(404).send("Page Not Found");
+
+  res.render("categories/category", {
+    title: categoryData.title,
+    activePage: category,
+    categoryPageCSS: true,
+    recipes: await getRecipesByCategory(category),
+  });
+});
+
+app.post("/api/recipes", async (req, res) => {
+  if (!supabaseWriteEnabled || !supabaseAdmin) {
+    return res.status(503).json({
+      error: "Recipe writes are disabled. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+    });
+  }
+
+  const category = String(req.body.category || "").trim();
+  const title = String(req.body.title || "").trim();
+  const slug = toSlug(req.body.slug || title);
+  const description = String(req.body.description || "").trim();
+  const subtitle = String(req.body.subtitle || "").trim() || null;
+  const recipeImageBase64 = String(req.body.recipe_image_base64 || "").trim();
+
+  if (!category || !title || !slug || !description || !recipeImageBase64) {
+    return res.status(400).json({
+      error: "category, title, slug/title, description, and recipe image are required.",
+    });
+  }
+
+  const rawIngredients = Array.isArray(req.body.ingredients)
+    ? req.body.ingredients
+        .map((item, index) => ({
+          name: String(item.name || "").trim(),
+          image_base64: String(item.image_base64 || "").trim(),
+          amount_value: parseNumberOrNull(item.amount_value),
+          amount_unit: String(item.amount_unit || "").trim() || null,
+          position: index,
+        }))
+        .filter((item) => item.name.length > 0)
+    : [];
+
+  if (rawIngredients.length === 0) {
+    return res.status(400).json({ error: "At least one ingredient is required." });
+  }
+
+  for (const ingredient of rawIngredients) {
+    if (!ingredient.image_base64) {
+      return res.status(400).json({ error: `Image is required for ingredient "${ingredient.name}".` });
+    }
+    if (ingredient.amount_value === null || !ingredient.amount_unit) {
+      return res.status(400).json({ error: `Amount value and unit are required for ingredient "${ingredient.name}".` });
+    }
+  }
+
+  const steps = Array.isArray(req.body.steps)
+    ? req.body.steps
+        .map((item, index) => ({
+          step_number: index + 1,
+          title: String(item.title || "").trim() || null,
+          body: String(item.body || "").trim(),
+        }))
+        .filter((item) => item.body.length > 0)
+    : [];
+
+  if (steps.length === 0) {
+    return res.status(400).json({ error: "At least one instruction step is required." });
+  }
+
+  const tips = Array.isArray(req.body.tips)
+    ? req.body.tips
+        .map((item, index) => ({
+          tip: String(item.tip || "").trim(),
+          position: index,
+        }))
+        .filter((item) => item.tip.length > 0)
+    : [];
+
+  let recipeImagePath = null;
+  try {
+    recipeImagePath = await uploadImageOrThrow({
+      bucket: "recipe-images",
+      folder: slug,
+      fileBase64: recipeImageBase64,
+      fieldName: "recipe image",
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message || "Recipe image upload failed." });
+  }
+
+  const ingredients = [];
+  try {
+    for (const ingredient of rawIngredients) {
+      const ingredientImagePath = await uploadImageOrThrow({
+        bucket: "ingredient-images",
+        folder: slug,
+        fileBase64: ingredient.image_base64,
+        fieldName: `ingredient image (${ingredient.name})`,
+      });
+      ingredients.push({
+        name: ingredient.name,
+        image_path: ingredientImagePath,
+        amount_value: ingredient.amount_value,
+        amount_unit: ingredient.amount_unit,
+        amount_text: null,
+        position: ingredient.position,
+      });
+    }
+  } catch (error) {
+    return res.status(400).json({ error: error.message || "Ingredient image upload failed." });
+  }
+
+  const payload = {
+    p_category_slug: category,
+    p_slug: slug,
+    p_title: title,
+    p_subtitle: subtitle,
+    p_description: description,
+    p_image_path: recipeImagePath,
+    p_prep_minutes: parseNumberOrNull(req.body.prep_minutes),
+    p_cook_minutes: parseNumberOrNull(req.body.cook_minutes),
+    p_serves: parseNumberOrNull(req.body.serves),
+    p_is_published: Boolean(req.body.is_published),
+    p_ingredients: ingredients,
+    p_steps: steps,
+    p_tips: tips,
+  };
+
+  const { data, error } = await supabaseAdmin.rpc("create_recipe_with_details", payload);
+  if (error) {
+    console.error("Recipe creation failed:", error.message);
+    return res.status(400).json({ error: error.message });
+  }
+
+  return res.status(201).json({
+    id: data,
+    slug,
+    link: `/categories/${category}/${slug}`,
   });
 });
 

@@ -90,6 +90,55 @@ p {
   height: fit-content;
 }
 
+.ingredients-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ingredients-header h3 {
+  margin-bottom: 0;
+}
+
+.servings-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+}
+
+.servings-control span {
+  font-weight: 700;
+  color: #6c584c;
+  margin-right: 0.25rem;
+}
+
+.servings-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #6c584c;
+  border-radius: 6px;
+  background: #f5f1ed;
+  color: #6c584c;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.servings-input {
+  width: 58px;
+  height: 30px;
+  border: 1px solid #b8aa9e;
+  border-radius: 6px;
+  text-align: center;
+  background: #f5f1ed;
+  color: #3d312a;
+  font-weight: 600;
+}
+
 /* --- Ingredients Visual Grid --- */
 .ingredients-visual-grid {
   display: grid;
@@ -282,6 +331,11 @@ p {
     grid-row: auto;
     padding: 1rem;
     font-size: smaller;
+  }
+
+  .ingredients-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .cooking-tips {

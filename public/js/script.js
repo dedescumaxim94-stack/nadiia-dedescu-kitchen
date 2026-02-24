@@ -141,4 +141,83 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  // ================================================
+  //   Recipe page, servings scaling
+  // ================================================
+  const servingsControl = document.querySelector("[data-base-serves]");
+  if (servingsControl) {
+    const baseServes = Number(servingsControl.getAttribute("data-base-serves"));
+    const input = servingsControl.querySelector("[data-servings-input]");
+    const incBtn = servingsControl.querySelector("[data-servings-increase]");
+    const decBtn = servingsControl.querySelector("[data-servings-decrease]");
+    const amountNodes = document.querySelectorAll("[data-ingredient-amount]");
+    const prepNode = document.querySelector("[data-meta-prep]");
+    const cookNode = document.querySelector("[data-meta-cook]");
+    const servesNode = document.querySelector("[data-meta-serves]");
+
+    // Time grows sublinearly as servings increase.
+    const PREP_TIME_EXPONENT = 0.4;
+    const COOK_TIME_EXPONENT = 0.2;
+
+    const formatScaledAmount = (value) => {
+      if (!Number.isFinite(value)) return "";
+      const rounded = Math.round(value * 100) / 100;
+      return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/\.?0+$/, "");
+    };
+
+    const updateAmounts = () => {
+      const currentServes = Number(input?.value || baseServes);
+      if (!Number.isFinite(baseServes) || baseServes <= 0 || !Number.isFinite(currentServes) || currentServes <= 0) return;
+      const ratio = currentServes / baseServes;
+
+      amountNodes.forEach((node) => {
+        const amountValue = Number(node.getAttribute("data-amount-value"));
+        const amountUnit = String(node.getAttribute("data-amount-unit") || "").trim();
+        const originalAmount = String(node.getAttribute("data-original-amount") || "").trim();
+
+        if (Number.isFinite(amountValue)) {
+          const scaledText = `${formatScaledAmount(amountValue * ratio)}${amountUnit ? ` ${amountUnit}` : ""}`;
+          node.textContent = scaledText;
+        } else {
+          node.textContent = originalAmount;
+        }
+      });
+
+      if (servesNode) {
+        servesNode.textContent = `👥 Serves ${currentServes}`;
+      }
+
+      const updateTimeMeta = (node, icon, label, exponent) => {
+        if (!node) return;
+        const baseMinutes = Number(node.getAttribute("data-base-minutes"));
+        if (!Number.isFinite(baseMinutes) || baseMinutes <= 0) return;
+        const scaled = Math.max(1, Math.round(baseMinutes * Math.pow(ratio, exponent)));
+        node.textContent = `${icon} ${scaled} min ${label}`;
+      };
+
+      updateTimeMeta(prepNode, "⏱", "Prep", PREP_TIME_EXPONENT);
+      updateTimeMeta(cookNode, "🔥", "Cook", COOK_TIME_EXPONENT);
+    };
+
+    incBtn?.addEventListener("click", () => {
+      const next = Math.max(1, Number(input?.value || 1) + 1);
+      if (input) input.value = String(next);
+      updateAmounts();
+    });
+
+    decBtn?.addEventListener("click", () => {
+      const next = Math.max(1, Number(input?.value || 1) - 1);
+      if (input) input.value = String(next);
+      updateAmounts();
+    });
+
+    input?.addEventListener("input", () => {
+      const parsed = Math.max(1, Math.round(Number(input.value || "1")));
+      input.value = String(parsed);
+      updateAmounts();
+    });
+
+    updateAmounts();
+  }
 });
