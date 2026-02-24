@@ -1,0 +1,26 @@
+<main class="login-main">
+  <section class="login-card">
+    <h2>Admin Login</h2>
+    <p>Sign in with your admin account to manage categories, recipes, and ingredients.</p>
+
+    <% if (error) { %>
+      <p class="login-error"><%= error %></p>
+    <% } %>
+
+    <form method="post" action="/login" class="login-form">
+      <input type="hidden" name="next" value="<%= nextPath || '/admin' %>" />
+
+      <label>
+        Email
+        <input type="email" name="email" autocomplete="email" required />
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" autocomplete="current-password" required />
+      </label>
+
+      <button type="submit">Sign In</button>
+    </form>
+  </section>
+</main>

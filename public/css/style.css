@@ -46,8 +46,35 @@ h1 {
   margin: 0;
 }
 
-header > a {
+.header-logo {
   grid-column: 2 / span 6;
+}
+
+.header-auth {
+  grid-column: 7 / span 2;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-right: 1rem;
+}
+
+.header-link {
+  border: 1px solid #6c584c;
+  border-radius: 6px;
+  background: #f5f1ed;
+  color: #6c584c;
+  padding: 0.35rem 0.65rem;
+  font-weight: 600;
+}
+
+.header-link-btn {
+  font: inherit;
+  cursor: pointer;
+}
+
+.logout-form {
+  margin: 0;
 }
 
 /*---------------side menu---------------*/
@@ -339,6 +366,16 @@ main {
     gap: 1rem;
   }
 
+  .header-auth {
+    padding-right: 0.6rem;
+    gap: 0.4rem;
+  }
+
+  .header-link {
+    padding: 0.3rem 0.55rem;
+    font-size: 0.9rem;
+  }
+
   h1 {
     font-size: 1.8rem;
   }
@@ -366,6 +403,18 @@ main {
 
   h1 {
     grid-row: 2;
+  }
+
+  .header-logo {
+    grid-column: 2;
+  }
+
+  .header-auth {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
+    padding-right: 0;
   }
 
   main {

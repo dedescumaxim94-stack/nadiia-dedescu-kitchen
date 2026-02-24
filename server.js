@@ -9,6 +9,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+const AUTH_COOKIE_NAME = "ndk_admin_token";
+const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 // Disable browser caching while developing locally.
 app.use((req, res, next) => {
@@ -118,9 +120,13 @@ try {
 const supabaseReadKey = supabaseAnonKey || supabaseServiceRoleKey;
 const supabaseReadEnabled = Boolean(createClient && supabaseUrl && supabaseReadKey);
 const supabaseWriteEnabled = Boolean(createClient && supabaseUrl && supabaseServiceRoleKey);
+const supabaseAuthEnabled = Boolean(createClient && supabaseUrl && supabaseAnonKey);
 
 const supabase = supabaseReadEnabled
   ? createClient(supabaseUrl, supabaseReadKey, { auth: { persistSession: false, autoRefreshToken: false } })
+  : null;
+const supabaseAuth = supabaseAuthEnabled
+  ? createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false, autoRefreshToken: false } })
   : null;
 const supabaseAdmin = supabaseWriteEnabled
   ? createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
@@ -133,6 +139,165 @@ if (!supabaseReadEnabled) {
 if (!supabaseWriteEnabled) {
   console.log("Supabase service role key missing. Recipe write API is disabled.");
 }
+
+if (!supabaseAuthEnabled) {
+  console.log("Supabase anon key missing. Auth routes are disabled.");
+}
+
+function parseCookies(cookieHeader = "") {
+  return cookieHeader
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .reduce((acc, pair) => {
+      const eqIndex = pair.indexOf("=");
+      if (eqIndex === -1) return acc;
+      const key = pair.slice(0, eqIndex).trim();
+      const value = pair.slice(eqIndex + 1).trim();
+      try {
+        acc[key] = decodeURIComponent(value);
+      } catch {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+}
+
+function getAuthTokenFromRequest(req) {
+  return parseCookies(req.headers.cookie || "")[AUTH_COOKIE_NAME] || null;
+}
+
+function setAuthCookie(res, token) {
+  const cookieParts = [
+    `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Max-Age=${AUTH_COOKIE_MAX_AGE_SECONDS}`,
+  ];
+  if (process.env.NODE_ENV === "production") cookieParts.push("Secure");
+  res.setHeader("Set-Cookie", cookieParts.join("; "));
+}
+
+function clearAuthCookie(res) {
+  const cookieParts = [
+    `${AUTH_COOKIE_NAME}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=0",
+  ];
+  if (process.env.NODE_ENV === "production") cookieParts.push("Secure");
+  res.setHeader("Set-Cookie", cookieParts.join("; "));
+}
+
+async function getAuthenticatedUser(token) {
+  if (!supabaseAuth || !token) return null;
+  const { data, error } = await supabaseAuth.auth.getUser(token);
+  if (error || !data?.user) return null;
+  return data.user;
+}
+
+async function isAdminUser(userId) {
+  if (!supabaseAdmin || !userId) return false;
+  const { data, error } = await supabaseAdmin.from("admin_users").select("user_id").eq("user_id", userId).maybeSingle();
+  if (error) {
+    console.error("Admin lookup failed:", error.message);
+    return false;
+  }
+  return Boolean(data?.user_id);
+}
+
+function getSafeAdminRedirect(nextParam) {
+  if (typeof nextParam !== "string") return "/admin";
+  if (!nextParam.startsWith("/admin")) return "/admin";
+  return nextParam;
+}
+
+async function attachAuthContext(req, res, next) {
+  res.locals.auth = {
+    isAuthenticated: false,
+    isAdmin: false,
+    email: null,
+  };
+
+  const token = getAuthTokenFromRequest(req);
+  if (!token) return next();
+
+  const user = await getAuthenticatedUser(token);
+  if (!user) {
+    clearAuthCookie(res);
+    return next();
+  }
+
+  const isAdmin = await isAdminUser(user.id);
+  res.locals.auth = {
+    isAuthenticated: true,
+    isAdmin,
+    email: user.email || null,
+  };
+  req.authToken = token;
+  req.authUser = user;
+  req.isAdmin = isAdmin;
+  return next();
+}
+
+function requireAdminPage(req, res, next) {
+  if (!res.locals.auth?.isAuthenticated) {
+    const nextPath = encodeURIComponent(req.originalUrl || "/admin");
+    return res.redirect(`/login?next=${nextPath}`);
+  }
+  if (!res.locals.auth?.isAdmin) {
+    return res.status(403).render("auth/login", {
+      title: "Login",
+      activePage: "login",
+      loginPageCSS: true,
+      error: "This account is not authorized for admin access.",
+      nextPath: "/admin",
+    });
+  }
+  return next();
+}
+
+function requireAdminApi(req, res, next) {
+  if (!res.locals.auth?.isAuthenticated) {
+    return res.status(401).json({ error: "Authentication required." });
+  }
+  if (!res.locals.auth?.isAdmin) {
+    return res.status(403).json({ error: "Admin access required." });
+  }
+  return next();
+}
+
+async function getAdminDashboardCounts() {
+  if (!supabaseAdmin) {
+    return { categories: 0, recipes: 0, draftRecipes: 0, ingredients: 0 };
+  }
+
+  const [categoriesRes, recipesRes, draftRecipesRes, ingredientsRes] = await Promise.all([
+    supabaseAdmin.from("categories").select("*", { count: "exact", head: true }),
+    supabaseAdmin.from("recipes").select("*", { count: "exact", head: true }),
+    supabaseAdmin.from("recipes").select("*", { count: "exact", head: true }).eq("is_published", false),
+    supabaseAdmin.from("ingredients").select("*", { count: "exact", head: true }),
+  ]);
+
+  if (categoriesRes.error || recipesRes.error || draftRecipesRes.error || ingredientsRes.error) {
+    console.error(
+      "Admin dashboard count query failed:",
+      categoriesRes.error?.message || recipesRes.error?.message || draftRecipesRes.error?.message || ingredientsRes.error?.message
+    );
+    return { categories: 0, recipes: 0, draftRecipes: 0, ingredients: 0 };
+  }
+
+  return {
+    categories: categoriesRes.count || 0,
+    recipes: recipesRes.count || 0,
+    draftRecipes: draftRecipesRes.count || 0,
+    ingredients: ingredientsRes.count || 0,
+  };
+}
+
+app.use(attachAuthContext);
 
 function toSlug(value = "") {
   return value
@@ -333,6 +498,84 @@ async function getRecipeDetails(categorySlug, recipeSlug) {
   };
 }
 
+app.get("/login", (req, res) => {
+  if (res.locals.auth?.isAdmin) return res.redirect("/admin");
+  const nextPath = getSafeAdminRedirect(req.query.next);
+  return res.render("auth/login", {
+    title: "Login",
+    activePage: "login",
+    loginPageCSS: true,
+    error: null,
+    nextPath,
+  });
+});
+
+app.post("/login", async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  const password = String(req.body.password || "");
+  const nextPath = getSafeAdminRedirect(req.body.next);
+
+  if (!supabaseAuth || !supabaseAdmin) {
+    return res.status(503).render("auth/login", {
+      title: "Login",
+      activePage: "login",
+      loginPageCSS: true,
+      error: "Auth is not configured. Set SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY.",
+      nextPath,
+    });
+  }
+
+  if (!email || !password) {
+    return res.status(400).render("auth/login", {
+      title: "Login",
+      activePage: "login",
+      loginPageCSS: true,
+      error: "Email and password are required.",
+      nextPath,
+    });
+  }
+
+  const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
+  if (error || !data?.user || !data?.session?.access_token) {
+    return res.status(401).render("auth/login", {
+      title: "Login",
+      activePage: "login",
+      loginPageCSS: true,
+      error: "Invalid email or password.",
+      nextPath,
+    });
+  }
+
+  const isAdmin = await isAdminUser(data.user.id);
+  if (!isAdmin) {
+    return res.status(403).render("auth/login", {
+      title: "Login",
+      activePage: "login",
+      loginPageCSS: true,
+      error: "This account is not authorized for admin access.",
+      nextPath,
+    });
+  }
+
+  setAuthCookie(res, data.session.access_token);
+  return res.redirect(nextPath);
+});
+
+app.post("/logout", (req, res) => {
+  clearAuthCookie(res);
+  return res.redirect("/login");
+});
+
+app.get("/admin", requireAdminPage, async (req, res) => {
+  const counts = await getAdminDashboardCounts();
+  return res.render("admin/dashboard", {
+    title: "Admin Dashboard",
+    activePage: "admin",
+    adminPageCSS: true,
+    counts,
+  });
+});
+
 // Home route
 app.get("/", (req, res) => {
   res.render("index", {
@@ -341,7 +584,7 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/categories/new-recipes", async (req, res) => {
+app.get("/categories/new-recipes", requireAdminPage, async (req, res) => {
   const categories = await getFormCategories();
   res.render("categories/new-recipe", {
     title: "Add New Recipe",
@@ -375,7 +618,7 @@ app.get("/categories/:category", async (req, res) => {
   });
 });
 
-app.post("/api/recipes", async (req, res) => {
+app.post("/api/recipes", requireAdminApi, async (req, res) => {
   if (!supabaseWriteEnabled || !supabaseAdmin) {
     return res.status(503).json({
       error: "Recipe writes are disabled. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",

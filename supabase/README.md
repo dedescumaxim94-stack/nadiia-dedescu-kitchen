@@ -17,6 +17,7 @@ It creates:
 - `create_recipe_with_details(...)` RPC for transactional recipe creation
 
 The security hardening migration restricts recipe writes to service role usage only.
+The admin users migration adds `public.admin_users` for app-level admin authorization.
 
 ## 1.1 App environment variables
 
@@ -24,10 +25,7 @@ Set these before starting the Express app:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY` (required for server-side recipe writes)
-
-Optional read-only fallback:
-
-- `SUPABASE_ANON_KEY` (used only if service role key is missing)
+- `SUPABASE_ANON_KEY` (required for login via Supabase Auth)
 
 ## 2. Route query mapping
 
@@ -109,6 +107,19 @@ select tip
 from public.recipe_tips
 where recipe_id = :recipe_id
 order by position asc;
+```
+
+## 2.1 Bootstrap first admin user
+
+1. Create/sign in the user in Supabase Auth (email/password).
+2. In SQL editor, insert that user into `public.admin_users`:
+
+```sql
+insert into public.admin_users (user_id, email)
+select id, email
+from auth.users
+where email = 'your-admin@email.com'
+on conflict (user_id) do nothing;
 ```
 
 ## 3. Create recipe + existing/new ingredients

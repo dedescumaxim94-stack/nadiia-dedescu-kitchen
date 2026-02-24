@@ -1,0 +1,34 @@
+<main class="admin-main">
+  <section class="admin-shell">
+    <header class="admin-header">
+      <h2>Admin Dashboard</h2>
+      <p>Manage all content from one place.</p>
+    </header>
+
+    <section class="admin-stats" aria-label="Content statistics">
+      <article class="admin-stat-card">
+        <h3>Categories</h3>
+        <p><%= counts.categories %></p>
+      </article>
+      <article class="admin-stat-card">
+        <h3>Recipes</h3>
+        <p><%= counts.recipes %></p>
+      </article>
+      <article class="admin-stat-card">
+        <h3>Draft Recipes</h3>
+        <p><%= counts.draftRecipes %></p>
+      </article>
+      <article class="admin-stat-card">
+        <h3>Ingredients</h3>
+        <p><%= counts.ingredients %></p>
+      </article>
+    </section>
+
+    <section class="admin-links" aria-label="Admin actions">
+      <a href="/categories/new-recipes" class="admin-link-card">
+        <h3>Add New Recipe</h3>
+        <p>Open the recipe builder with image upload and draft/publish control.</p>
+      </a>
+    </section>
+  </section>
+</main>
