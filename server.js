@@ -37,84 +37,6 @@ app.set("views", path.join(__dirname, "views"));
 app.use(expressEjsLayouts);
 app.set("layout", "layout");
 
-const fallbackCategoryTitles = {
-  breakfast: "Breakfast Recipes",
-  lunch: "Lunch Recipes",
-  dinner: "Dinner Recipes",
-  dessert: "Dessert Recipes",
-  "set-menu": "Set Menu Recipes",
-  "new-recipes": "New Recipe Recipes",
-};
-
-const fallbackRecipesByCategory = {
-  breakfast: [
-    {
-      title: "Ricotta Pancakes",
-      link: "/categories/breakfast/ricotta-pancakes",
-      image: "/src/images/breakfast/Ricotta-Pancakes.png",
-      alt: "Ricotta Pancakes",
-      description: "A classic gourmet dish featuring cheese pancakes with a soft, creamy texture...",
-      time: "25 min",
-      timeISO: "PT25M",
-    },
-  ],
-  lunch: [],
-  dinner: [],
-  dessert: [],
-  "set-menu": [],
-  "new-recipes": [],
-};
-
-const fallbackRecipeDetails = {
-  "breakfast/ricotta-pancakes": {
-    title: "Ricotta Pancakes",
-    subtitle: "Gourmet Ricotta Pancakes",
-    description:
-      "Delicate and airy ricotta pancakes with a soft, creamy texture, inspired by the French love for refined desserts. Light, fragrant, and perfect for breakfast or a sweet moment any time of day. Delicious on their own or served with honey, berries, or sour cream. 🤍",
-    image: "/src/images/breakfast/Ricotta-Pancakes.png",
-    activePage: "breakfast",
-    recipePageCSS: true,
-    serves: 4,
-    prepMinutes: 10,
-    cookMinutes: 15,
-    meta: ["⏱ 10 min Prep", "🔥 15 min Cook", "👥 Serves 4"],
-    ingredients: [
-      { name: "Ricotta", image: "/src/images/ingredients/ricota-cheese.png", amountValue: 1, amountUnit: "cup", amount: "1 cup" },
-      { name: "Eggs", image: "/src/images/ingredients/egg.png", amountValue: 1, amountUnit: "large", amount: "1 large" },
-      { name: "Sugar", image: "/src/images/ingredients/sugar.png", amountValue: 1.5, amountUnit: "tbsp", amount: "1.5 tbsp" },
-      { name: "Vanilla Sugar", image: "/src/images/ingredients/vanilla-sugar.png", amountValue: 1, amountUnit: "tsp", amount: "1 tsp" },
-      { name: "All-purpose Flour", image: "/src/images/ingredients/all-purpose-flour.png", amountValue: 4, amountUnit: "tbsp", amount: "4 tbsp" },
-      { name: "Baking Powder", image: "/src/images/ingredients/baking-powder.png", amountValue: 0.5, amountUnit: "tsp", amount: "1/2 tsp" },
-      { name: "Lemon", image: "/src/images/ingredients/lemon.png", amountValue: 0.25, amountUnit: "tsp", amount: "1/4 tsp" },
-    ],
-    instructions: [
-      {
-        title: "Mix Ingredients:",
-        text: "Combine all ingredients in a bowl and mix until smooth. If using lemon, add the zest and juice of 1/4 lemon.",
-      },
-      { title: "Heat the Pan:", text: "Heat oil in a non-stick frying pan over medium heat. Lightly moisten your hands with water." },
-      {
-        title: "Shape:",
-        text: "Shape small balls from the ricotta mixture and place them in the pan, gently flattening and shaping them with a spatula if needed.",
-      },
-      {
-        title: "Cook:",
-        text: "Fry for a few minutes until golden. Flip, gently press with a spatula, and cook the other side until golden.",
-      },
-      {
-        title: "Serve:",
-        text: "Transfer the pancakes to a plate lined with paper towels. Serve with sour cream (or Greek yogurt), jam, honey, or sweetened condensed milk.",
-      },
-      { title: "Enjoy:", text: "Enjoy your delicious breakfast! ☀️🥞" },
-    ],
-    tips: [
-      "Don’t chase a perfect shape — it’s better for the pancakes to be tender and flavorful than overloaded with flour.",
-      "Shaping the pancakes with slightly wet hands makes the process much easier.",
-      "Cook the pancakes over medium heat, not high. Otherwise, they may brown too quickly on the outside without cooking through.",
-    ],
-  },
-};
-
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -122,7 +44,7 @@ let createClient = null;
 try {
   ({ createClient } = await import("@supabase/supabase-js"));
 } catch {
-  console.log("@supabase/supabase-js is not installed. Using static fallback data.");
+  console.log("@supabase/supabase-js is not installed.");
 }
 
 const supabaseReadKey = supabaseAnonKey || supabaseServiceRoleKey;
@@ -141,7 +63,7 @@ const supabaseAdmin = supabaseWriteEnabled
   : null;
 
 if (!supabaseReadEnabled) {
-  console.log("Supabase read env vars not set or Supabase client missing. Using static fallback data.");
+  throw new Error("Supabase read access is required. Set SUPABASE_URL and SUPABASE_ANON_KEY (or SUPABASE_SERVICE_ROLE_KEY).");
 }
 
 if (!supabaseWriteEnabled) {
@@ -166,10 +88,6 @@ const authMiddleware = createAuthMiddleware({
 
 const publicContentService = createPublicContentService({
   supabase,
-  supabaseReadEnabled,
-  fallbackCategoryTitles,
-  fallbackRecipesByCategory,
-  fallbackRecipeDetails,
 });
 
 const adminService = createAdminService({

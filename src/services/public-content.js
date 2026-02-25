@@ -1,10 +1,4 @@
-export function createPublicContentService({
-  supabase,
-  supabaseReadEnabled,
-  fallbackCategoryTitles,
-  fallbackRecipesByCategory,
-  fallbackRecipeDetails,
-}) {
+export function createPublicContentService({ supabase }) {
   function buildRecipeMeta(prepMinutes, cookMinutes, serves) {
     const meta = [];
     if (prepMinutes !== null && prepMinutes !== undefined) meta.push(`⏱ ${prepMinutes} min Prep`);
@@ -23,41 +17,23 @@ export function createPublicContentService({
   }
 
   async function getCategoryBySlug(categorySlug) {
-    if (!supabaseReadEnabled) {
-      const title = fallbackCategoryTitles[categorySlug];
-      return title ? { slug: categorySlug, title } : null;
-    }
-
     const { data, error } = await supabase.from("categories").select("slug, title").eq("slug", categorySlug).maybeSingle();
     if (error) {
-      console.error("Supabase category lookup failed:", error.message);
-      const title = fallbackCategoryTitles[categorySlug];
-      return title ? { slug: categorySlug, title } : null;
+      throw new Error(`Supabase category lookup failed: ${error.message}`);
     }
     return data;
   }
 
   async function getFormCategories() {
-    if (!supabaseReadEnabled) {
-      return Object.entries(fallbackCategoryTitles)
-        .filter(([slug]) => slug !== "new-recipes")
-        .map(([slug, title]) => ({ slug, title }));
-    }
-
     const { data, error } = await supabase.from("categories").select("slug, title").order("title");
     if (error) {
-      console.error("Supabase categories list failed:", error.message);
-      return Object.entries(fallbackCategoryTitles)
-        .filter(([slug]) => slug !== "new-recipes")
-        .map(([slug, title]) => ({ slug, title }));
+      throw new Error(`Supabase categories list failed: ${error.message}`);
     }
 
     return (data || []).filter((c) => c.slug !== "new-recipes");
   }
 
   async function getRecipesByCategory(categorySlug) {
-    if (!supabaseReadEnabled) return fallbackRecipesByCategory[categorySlug] || [];
-
     const { data, error } = await supabase
       .from("recipes")
       .select("slug, title, description, image_path, prep_minutes, cook_minutes, categories!inner(slug)")
@@ -66,8 +42,7 @@ export function createPublicContentService({
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Supabase recipes list failed:", error.message);
-      return fallbackRecipesByCategory[categorySlug] || [];
+      throw new Error(`Supabase recipes list failed: ${error.message}`);
     }
 
     return (data || []).map((recipe) => {
@@ -85,8 +60,6 @@ export function createPublicContentService({
   }
 
   async function getRecipeDetails(categorySlug, recipeSlug) {
-    if (!supabaseReadEnabled) return fallbackRecipeDetails[`${categorySlug}/${recipeSlug}`] || null;
-
     const { data: recipe, error: recipeError } = await supabase
       .from("recipes")
       .select("id, title, subtitle, description, image_path, prep_minutes, cook_minutes, serves, categories!inner(slug)")
@@ -96,8 +69,7 @@ export function createPublicContentService({
       .maybeSingle();
 
     if (recipeError) {
-      console.error("Supabase recipe detail failed:", recipeError.message);
-      return fallbackRecipeDetails[`${categorySlug}/${recipeSlug}`] || null;
+      throw new Error(`Supabase recipe detail failed: ${recipeError.message}`);
     }
 
     if (!recipe) return null;
@@ -108,13 +80,18 @@ export function createPublicContentService({
         .select("position, amount_text, amount_value, amount_unit, ingredients(name, image_path)")
         .eq("recipe_id", recipe.id)
         .order("position", { ascending: true }),
-      supabase.from("recipe_steps").select("step_number, title, body").eq("recipe_id", recipe.id).order("step_number", { ascending: true }),
+      supabase
+        .from("recipe_steps")
+        .select("step_number, title, body")
+        .eq("recipe_id", recipe.id)
+        .order("step_number", { ascending: true }),
       supabase.from("recipe_tips").select("position, tip").eq("recipe_id", recipe.id).order("position", { ascending: true }),
     ]);
 
     if (ingredientsRes.error || stepsRes.error || tipsRes.error) {
-      console.error("Supabase nested detail failed:", ingredientsRes.error?.message || stepsRes.error?.message || tipsRes.error?.message);
-      return fallbackRecipeDetails[`${categorySlug}/${recipeSlug}`] || null;
+      throw new Error(
+        `Supabase nested detail failed: ${ingredientsRes.error?.message || stepsRes.error?.message || tipsRes.error?.message}`,
+      );
     }
 
     return {
