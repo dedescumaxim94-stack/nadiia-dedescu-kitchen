@@ -1,0 +1,67 @@
+<section class="admin-panel">
+  <p class="admin-table-summary">
+    Showing <strong><%= items.length %></strong> of <strong><%= pagination.total %></strong> ingredients.
+  </p>
+  <% if (searchFeedback) { %>
+    <p class="admin-search-feedback"><%= searchFeedback %></p>
+  <% } %>
+
+  <% if (!items.length) { %>
+    <p class="admin-empty">No ingredients found.</p>
+  <% } else { %>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Ingredient</th>
+            <th>Used In Recipes</th>
+            <th>Updated</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function(item) { %>
+            <tr>
+              <td>
+                <div class="ingredient-cell">
+                  <img src="<%= item.image_path %>" alt="<%= item.name %>" />
+                  <span><%= item.name %></span>
+                </div>
+              </td>
+              <td><%= item.recipe_usage_count %></td>
+              <td><%= item.updated_label %></td>
+              <td>
+                <div class="table-actions">
+                  <a href="/admin/ingredients/<%= item.id %>/edit" class="admin-btn admin-btn-outline">Edit</a>
+                  <button
+                    type="button"
+                    class="admin-btn admin-btn-danger"
+                    data-ingredient-delete
+                    data-id="<%= item.id %>"
+                    data-name="<%= item.name %>"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+
+  <nav class="admin-pagination" aria-label="Ingredients pagination">
+    <% if (pagination.hasPrev) { %>
+      <a class="admin-btn admin-btn-outline" href="<%= pagination.prevUrl %>">Previous</a>
+    <% } else { %>
+      <span class="admin-btn admin-btn-outline is-disabled">Previous</span>
+    <% } %>
+    <span>Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+    <% if (pagination.hasNext) { %>
+      <a class="admin-btn admin-btn-outline" href="<%= pagination.nextUrl %>">Next</a>
+    <% } else { %>
+      <span class="admin-btn admin-btn-outline is-disabled">Next</span>
+    <% } %>
+  </nav>
+</section>

@@ -1,0 +1,122 @@
+<section class="admin-panel">
+  <form class="admin-filters" method="get" action="/admin/recipes">
+    <input type="hidden" name="search" value="<%= filters.search %>" />
+
+    <label>
+      Status
+      <select name="status">
+        <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>All</option>
+        <option value="published" <%= filters.status === 'published' ? 'selected' : '' %>>Published</option>
+        <option value="draft" <%= filters.status === 'draft' ? 'selected' : '' %>>Draft</option>
+      </select>
+    </label>
+
+    <label>
+      Category
+      <select name="category">
+        <option value="">All categories</option>
+        <% categories.forEach(function(category) { %>
+          <option value="<%= category.slug %>" <%= filters.category === category.slug ? 'selected' : '' %>>
+            <%= category.title %>
+          </option>
+        <% }); %>
+      </select>
+    </label>
+
+    <label>
+      Page Size
+      <select name="page_size">
+        <% [10, 20, 50, 100].forEach(function(size) { %>
+          <option value="<%= size %>" <%= Number(filters.pageSize) === size ? 'selected' : '' %>><%= size %></option>
+        <% }); %>
+      </select>
+    </label>
+
+    <button type="submit" class="admin-btn admin-btn-outline">Apply Filters</button>
+  </form>
+
+  <p class="admin-table-summary">
+    Showing <strong><%= items.length %></strong> of <strong><%= pagination.total %></strong> recipes.
+  </p>
+  <% if (searchFeedback) { %>
+    <p class="admin-search-feedback"><%= searchFeedback %></p>
+  <% } %>
+
+  <% if (!items.length) { %>
+    <p class="admin-empty">No recipes found for the selected filters.</p>
+  <% } else { %>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Prep</th>
+            <th>Cook</th>
+            <th>Serves</th>
+            <th>Updated</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function(item) { %>
+            <tr>
+              <td>
+                <a class="admin-table-link" href="/admin/recipes/<%= item.id %>/edit"><%= item.title %></a>
+                <div class="admin-muted"><%= item.slug %></div>
+              </td>
+              <td><%= item.category_title %></td>
+              <td>
+                <span class="status-pill <%= item.is_published ? 'published' : 'draft' %>">
+                  <%= item.is_published ? 'Published' : 'Draft' %>
+                </span>
+              </td>
+              <td><%= item.prep_minutes ?? '-' %></td>
+              <td><%= item.cook_minutes ?? '-' %></td>
+              <td><%= item.serves ?? '-' %></td>
+              <td><%= item.updated_label %></td>
+              <td>
+                <div class="table-actions">
+                  <a href="/admin/recipes/<%= item.id %>/edit" class="admin-btn admin-btn-outline">Edit</a>
+                  <button
+                    type="button"
+                    class="admin-btn admin-btn-outline"
+                    data-recipe-publish
+                    data-id="<%= item.id %>"
+                    data-next-state="<%= item.is_published ? 'false' : 'true' %>"
+                  >
+                    <%= item.is_published ? 'Unpublish' : 'Publish' %>
+                  </button>
+                  <button
+                    type="button"
+                    class="admin-btn admin-btn-danger"
+                    data-recipe-delete
+                    data-id="<%= item.id %>"
+                    data-title="<%= item.title %>"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+
+  <nav class="admin-pagination" aria-label="Recipes pagination">
+    <% if (pagination.hasPrev) { %>
+      <a class="admin-btn admin-btn-outline" href="<%= pagination.prevUrl %>">Previous</a>
+    <% } else { %>
+      <span class="admin-btn admin-btn-outline is-disabled">Previous</span>
+    <% } %>
+    <span>Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+    <% if (pagination.hasNext) { %>
+      <a class="admin-btn admin-btn-outline" href="<%= pagination.nextUrl %>">Next</a>
+    <% } else { %>
+      <span class="admin-btn admin-btn-outline is-disabled">Next</span>
+    <% } %>
+  </nav>
+</section>

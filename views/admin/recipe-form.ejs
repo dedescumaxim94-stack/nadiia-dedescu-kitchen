@@ -1,0 +1,136 @@
+<section class="admin-panel">
+  <form
+    id="admin-recipe-form"
+    class="admin-form"
+    data-mode="<%= mode %>"
+    <% if (mode === 'edit') { %>data-recipe-id="<%= recipe.id %>"<% } %>
+    novalidate
+  >
+    <input type="hidden" name="publish_intent" value="<%= recipe.is_published ? 'publish' : 'draft' %>" />
+    <input type="hidden" name="existing_recipe_image_path" value="<%= recipe.image_path || '' %>" />
+
+    <div class="admin-form-grid">
+      <label>
+        Category
+        <select name="category" required>
+          <% categories.forEach(function(category) { %>
+            <option value="<%= category.slug %>" <%= recipe.category_slug === category.slug ? 'selected' : '' %>>
+              <%= category.title %>
+            </option>
+          <% }); %>
+        </select>
+      </label>
+
+      <label>
+        Recipe Title
+        <input type="text" name="title" value="<%= recipe.title || '' %>" required />
+      </label>
+
+      <label>
+        Subtitle
+        <input type="text" name="subtitle" value="<%= recipe.subtitle || '' %>" />
+      </label>
+
+      <label>
+        Prep Minutes
+        <input type="number" name="prep_minutes" min="0" value="<%= recipe.prep_minutes ?? '' %>" />
+      </label>
+
+      <label>
+        Cook Minutes
+        <input type="number" name="cook_minutes" min="0" value="<%= recipe.cook_minutes ?? '' %>" />
+      </label>
+
+      <label>
+        Serves
+        <input type="number" name="serves" min="1" value="<%= recipe.serves ?? '' %>" />
+      </label>
+
+      <div class="input-group">
+        <span class="field-label">Recipe Image</span>
+        <div class="image-control">
+          <button type="button" class="admin-btn admin-btn-outline image-trigger-btn" data-recipe-image-trigger>
+            + Add Image
+          </button>
+          <span class="file-name" data-recipe-image-name><%= recipe.image_path ? 'Current image selected' : 'No file selected' %></span>
+          <input class="visually-hidden-input" type="file" name="recipe_image" accept="image/*" />
+        </div>
+      </div>
+    </div>
+
+    <label>
+      Description
+      <textarea name="description" rows="4" required><%= recipe.description || '' %></textarea>
+    </label>
+
+    <section class="admin-builder-section" aria-label="Ingredients">
+      <div class="admin-section-head">
+        <h2>Ingredients</h2>
+        <button type="button" id="add-ingredient" class="admin-btn admin-btn-outline">+ Ingredient</button>
+      </div>
+      <div id="ingredients-list" class="admin-list-stack">
+        <% recipe.ingredients.forEach(function(ingredient) { %>
+          <div class="admin-row ingredient-row" data-ingredient-row>
+            <div class="ingredient-main">
+              <div class="ingredient-fields">
+                <input type="text" name="ingredient_name" value="<%= ingredient.name %>" placeholder="Ingredient name" required />
+                <input type="number" name="ingredient_amount_value" min="0" step="0.01" value="<%= ingredient.amount_value %>" placeholder="Amount" required />
+                <input type="text" name="ingredient_amount_unit" value="<%= ingredient.amount_unit %>" placeholder="Unit" required />
+              </div>
+              <div class="ingredient-image-control">
+                <button type="button" class="admin-btn admin-btn-outline image-trigger-btn" data-image-trigger>+ Add Image</button>
+                <span class="file-name" data-image-name><%= ingredient.image_path ? 'Current image selected' : 'No file selected' %></span>
+                <input type="hidden" name="ingredient_existing_image_path" value="<%= ingredient.image_path || '' %>" />
+                <input class="visually-hidden-input" type="file" name="ingredient_image" accept="image/*" />
+              </div>
+            </div>
+            <button type="button" class="admin-btn admin-btn-danger" data-remove-row>Remove</button>
+          </div>
+        <% }); %>
+      </div>
+    </section>
+
+    <section class="admin-builder-section" aria-label="Instructions">
+      <div class="admin-section-head">
+        <h2>Instructions</h2>
+        <button type="button" id="add-step" class="admin-btn admin-btn-outline">+ Step</button>
+      </div>
+      <div id="steps-list" class="admin-list-stack">
+        <% recipe.steps.forEach(function(step) { %>
+          <div class="admin-row step-row" data-step-row>
+            <div class="step-fields">
+              <input type="text" name="step_title" value="<%= step.title || '' %>" placeholder="Step title (optional)" />
+              <textarea name="step_body" placeholder="Step instruction" required><%= step.body || '' %></textarea>
+            </div>
+            <button type="button" class="admin-btn admin-btn-danger" data-remove-row>Remove</button>
+          </div>
+        <% }); %>
+      </div>
+    </section>
+
+    <section class="admin-builder-section" aria-label="Tips">
+      <div class="admin-section-head">
+        <h2>Tips</h2>
+        <button type="button" id="add-tip" class="admin-btn admin-btn-outline">+ Tip</button>
+      </div>
+      <div id="tips-list" class="admin-list-stack">
+        <% recipe.tips.forEach(function(tip) { %>
+          <div class="admin-row tip-row" data-tip-row>
+            <textarea name="tip_text" placeholder="Tip"><%= tip.tip || '' %></textarea>
+            <button type="button" class="admin-btn admin-btn-danger" data-remove-row>Remove</button>
+          </div>
+        <% }); %>
+      </div>
+    </section>
+
+    <div class="admin-form-actions">
+      <button type="submit" class="admin-btn admin-btn-outline" data-submit-intent="draft">
+        <%= mode === 'edit' ? 'Save Draft' : 'Create Draft' %>
+      </button>
+      <button type="submit" class="admin-btn admin-btn-primary" data-submit-intent="publish">
+        <%= mode === 'edit' ? 'Save & Publish' : 'Create & Publish' %>
+      </button>
+    </div>
+    <p class="admin-form-status" id="admin-recipe-status" aria-live="polite"></p>
+  </form>
+</section>

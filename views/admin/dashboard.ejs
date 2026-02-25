@@ -1,34 +1,43 @@
-<main class="admin-main">
-  <section class="admin-shell">
-    <header class="admin-header">
-      <h2>Admin Dashboard</h2>
-      <p>Manage all content from one place.</p>
-    </header>
-
-    <section class="admin-stats" aria-label="Content statistics">
-      <article class="admin-stat-card">
-        <h3>Categories</h3>
-        <p><%= counts.categories %></p>
-      </article>
-      <article class="admin-stat-card">
-        <h3>Recipes</h3>
-        <p><%= counts.recipes %></p>
-      </article>
-      <article class="admin-stat-card">
-        <h3>Draft Recipes</h3>
-        <p><%= counts.draftRecipes %></p>
-      </article>
-      <article class="admin-stat-card">
-        <h3>Ingredients</h3>
-        <p><%= counts.ingredients %></p>
-      </article>
-    </section>
-
-    <section class="admin-links" aria-label="Admin actions">
-      <a href="/categories/new-recipes" class="admin-link-card">
-        <h3>Add New Recipe</h3>
-        <p>Open the recipe builder with image upload and draft/publish control.</p>
-      </a>
-    </section>
+<section class="admin-panel">
+  <section class="admin-stats" aria-label="Content statistics">
+    <article class="admin-stat-card">
+      <h2>Categories</h2>
+      <p><%= counts.categories %></p>
+    </article>
+    <article class="admin-stat-card">
+      <h2>Total Recipes</h2>
+      <p><%= counts.recipes %></p>
+    </article>
+    <article class="admin-stat-card">
+      <h2>Published Recipes</h2>
+      <p><%= counts.publishedRecipes %></p>
+    </article>
+    <article class="admin-stat-card">
+      <h2>Draft Recipes</h2>
+      <p><%= counts.draftRecipes %></p>
+    </article>
+    <article class="admin-stat-card">
+      <h2>Ingredients</h2>
+      <p><%= counts.ingredients %></p>
+    </article>
   </section>
-</main>
+
+  <section class="admin-shortcuts" aria-label="Quick actions">
+    <a href="/admin/recipes/new" class="admin-shortcut-card">
+      <h3>New Recipe</h3>
+      <p>Create a recipe with ingredients, instructions, tips, and required images.</p>
+    </a>
+    <a href="/admin/recipes" class="admin-shortcut-card">
+      <h3>Manage Recipes</h3>
+      <p>Search, publish/unpublish, edit, and delete recipes.</p>
+    </a>
+    <a href="/admin/ingredients/new" class="admin-shortcut-card">
+      <h3>New Ingredient</h3>
+      <p>Add ingredients with required image uploads for recipe builder reuse.</p>
+    </a>
+    <a href="/admin/ingredients" class="admin-shortcut-card">
+      <h3>Manage Ingredients</h3>
+      <p>Edit or remove ingredients with usage checks.</p>
+    </a>
+  </section>
+</section>

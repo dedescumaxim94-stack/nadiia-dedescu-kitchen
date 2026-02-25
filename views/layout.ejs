@@ -48,9 +48,6 @@
           <li <% if (activePage === 'set-menu') { %>class="active"<% } %>>
             <a href="/categories/set-menu">Set-Menus</a>
           </li>
-          <li <% if (activePage === 'new-recipes') { %>class="active"<% } %>>
-            <a href="/categories/new-recipes">New Recipes</a>
-          </li>
         </ul>
       </li>
       <li class="menu-item">
@@ -78,6 +75,7 @@
         <% if (auth && auth.isAdmin) { %>
           <a class="header-link" href="/admin">Admin</a>
           <form method="post" action="/logout" class="logout-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
             <button type="submit" class="header-link header-link-btn">Logout</button>
           </form>
         <% } else { %>

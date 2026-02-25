@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<%
+  const safeAdminNavActive = typeof adminNavActive === "string" ? adminNavActive : "";
+  const safeAdminTitle = typeof adminTitle === "string" ? adminTitle : title;
+  const safeAdminSubtitle = typeof adminSubtitle === "string" ? adminSubtitle : "";
+  const safeAdminSearch = typeof adminSearch !== "undefined" ? adminSearch : null;
+  const safeAdminPrimaryAction = typeof adminPrimaryAction !== "undefined" ? adminPrimaryAction : null;
+  const safeAdminPageJS = typeof adminPageJS === "string" ? adminPageJS : "";
+%>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="<%= csrfToken || '' %>" />
+  <title><%= title %> - Nadiia's Kitchen Admin</title>
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-app">
+    <aside class="admin-sidebar" aria-label="Admin navigation">
+      <a class="admin-brand" href="/admin">
+        <span class="admin-brand-title">Nadiia's Kitchen</span>
+        <span class="admin-brand-subtitle">Admin</span>
+      </a>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-link <%= safeAdminNavActive === 'dashboard' ? 'active' : '' %>" href="/admin">Dashboard</a>
+        <a class="admin-nav-link <%= safeAdminNavActive === 'recipes' ? 'active' : '' %>" href="/admin/recipes">Recipes</a>
+        <a class="admin-nav-link <%= safeAdminNavActive === 'ingredients' ? 'active' : '' %>" href="/admin/ingredients">Ingredients</a>
+        <span class="admin-nav-link disabled">
+          Categories
+          <span class="admin-badge">V2</span>
+        </span>
+      </nav>
+    </aside>
+
+    <div class="admin-content">
+      <header class="admin-topbar">
+        <div class="admin-topbar-copy">
+          <h1><%= safeAdminTitle %></h1>
+          <% if (safeAdminSubtitle) { %>
+            <p><%= safeAdminSubtitle %></p>
+          <% } %>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <% if (safeAdminSearch && safeAdminSearch.action) { %>
+            <form class="admin-topbar-search" method="get" action="<%= safeAdminSearch.action %>">
+              <% if (safeAdminSearch.hidden) { %>
+                <% Object.keys(safeAdminSearch.hidden).forEach(function(key) { %>
+                  <input type="hidden" name="<%= key %>" value="<%= safeAdminSearch.hidden[key] %>" />
+                <% }); %>
+              <% } %>
+              <label class="sr-only" for="topbar-search-input">Search</label>
+              <input
+                id="topbar-search-input"
+                type="search"
+                name="search"
+                value="<%= safeAdminSearch.value || '' %>"
+                placeholder="<%= safeAdminSearch.placeholder || 'Search' %>"
+              />
+              <button type="submit" class="admin-btn admin-btn-outline">Search</button>
+            </form>
+          <% } %>
+
+          <% if (safeAdminPrimaryAction && safeAdminPrimaryAction.href && safeAdminPrimaryAction.label) { %>
+            <a href="<%= safeAdminPrimaryAction.href %>" class="admin-btn admin-btn-primary"><%= safeAdminPrimaryAction.label %></a>
+          <% } %>
+
+          <div class="admin-user">
+            <span><%= auth && auth.email ? auth.email : 'Admin' %></span>
+            <form method="post" action="/logout">
+              <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+              <button type="submit" class="admin-btn admin-btn-outline">Logout</button>
+            </form>
+          </div>
+        </div>
+      </header>
+
+      <main class="admin-main">
+        <%- body %>
+      </main>
+    </div>
+  </div>
+
+  <% if (safeAdminPageJS) { %>
+    <script src="/js/<%= safeAdminPageJS %>"></script>
+  <% } %>
+</body>
+</html>

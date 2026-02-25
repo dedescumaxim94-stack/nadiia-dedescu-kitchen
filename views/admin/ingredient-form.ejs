@@ -1,0 +1,37 @@
+<section class="admin-panel">
+  <form
+    id="admin-ingredient-form"
+    class="admin-form"
+    data-mode="<%= mode %>"
+    <% if (mode === 'edit') { %>data-ingredient-id="<%= ingredient.id %>"<% } %>
+    novalidate
+  >
+    <input type="hidden" name="existing_image_path" value="<%= ingredient.image_path || '' %>" />
+
+    <label>
+      Ingredient Name
+      <input type="text" name="name" value="<%= ingredient.name || '' %>" required />
+    </label>
+
+    <div class="input-group">
+      <span class="field-label">Ingredient Image</span>
+      <div class="image-control">
+        <button type="button" class="admin-btn admin-btn-outline image-trigger-btn" data-ingredient-image-trigger>
+          + Add Image
+        </button>
+        <span class="file-name" data-ingredient-image-name><%= ingredient.image_path ? 'Current image selected' : 'No file selected' %></span>
+        <input class="visually-hidden-input" type="file" name="image" accept="image/*" />
+      </div>
+      <% if (ingredient.image_path) { %>
+        <img class="ingredient-preview" src="<%= ingredient.image_path %>" alt="<%= ingredient.name %>" />
+      <% } %>
+    </div>
+
+    <div class="admin-form-actions">
+      <button type="submit" class="admin-btn admin-btn-primary">
+        <%= mode === 'edit' ? 'Save Ingredient' : 'Create Ingredient' %>
+      </button>
+    </div>
+    <p class="admin-form-status" id="admin-ingredient-status" aria-live="polite"></p>
+  </form>
+</section>
