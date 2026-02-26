@@ -134,6 +134,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const selected = ingredientCatalogByName.get(key);
     if (!selected) {
       ingredientIdInput.value = "";
+      if (existingPathInput && !row.querySelector('input[name="ingredient_image"]')?.files?.[0]) {
+        existingPathInput.value = "";
+      }
       return;
     }
 
@@ -144,10 +147,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const renderIngredientOptions = (items) => {
+  const findExistingIngredientByName = async (name) => {
+    const normalized = String(name || "")
+      .trim()
+      .toLowerCase();
+    if (!normalized) return null;
+
+    const fromCatalog = ingredientCatalogByName.get(normalized);
+    if (fromCatalog) return fromCatalog;
+
+    await fetchIngredientOptions(name);
+    return ingredientCatalogByName.get(normalized) || null;
+  };
+
+  const getSelectedIngredientNames = (excludeRow = null) => {
+    const selected = new Set();
+    const rows = form.querySelectorAll("[data-ingredient-row]");
+    for (const row of rows) {
+      if (excludeRow && row === excludeRow) continue;
+      const value = row.querySelector('input[name="ingredient_name"]')?.value.trim().toLowerCase();
+      if (!value) continue;
+      selected.add(value);
+    }
+    return selected;
+  };
+
+  const renderIngredientOptions = (items, activeRow = null) => {
     if (!ingredientOptionsList) return;
     ingredientOptionsList.innerHTML = "";
     const seen = new Set();
+    const blockedNames = getSelectedIngredientNames(activeRow);
 
     for (const item of items || []) {
       const name = String(item.name || "").trim();
@@ -162,13 +191,15 @@ document.addEventListener("DOMContentLoaded", () => {
         image_path: item.image_path || "",
       });
 
+      if (blockedNames.has(key)) continue;
+
       const option = document.createElement("option");
       option.value = name;
       ingredientOptionsList.appendChild(option);
     }
   };
 
-  const fetchIngredientOptions = async (search = "") => {
+  const fetchIngredientOptions = async (search = "", activeRow = null) => {
     const query = new URLSearchParams({
       page_size: "100",
       page: "1",
@@ -179,7 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
       headers: withCsrfHeaders(),
     });
     const payload = await parseJsonOrThrow(response);
-    renderIngredientOptions(payload.items || []);
+    renderIngredientOptions(payload.items || [], activeRow);
   };
 
   const renderRecipeTitleOptions = (items) => {
@@ -329,12 +360,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = event.target;
     if (!(target instanceof HTMLInputElement)) return;
     if (target.name === "ingredient_name") {
-      syncIngredientSelectionForRow(target.closest("[data-ingredient-row]"));
+      const row = target.closest("[data-ingredient-row]");
+      syncIngredientSelectionForRow(row);
 
       const value = target.value.trim();
       if (ingredientSearchTimer) window.clearTimeout(ingredientSearchTimer);
       ingredientSearchTimer = window.setTimeout(() => {
-        fetchIngredientOptions(value).catch(() => {});
+        fetchIngredientOptions(value, row).catch(() => {});
       }, 180);
       return;
     }
@@ -346,6 +378,14 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchRecipeTitleOptions(value).catch(() => {});
       }, 180);
     }
+  });
+
+  form.addEventListener("focusin", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (target.name !== "ingredient_name") return;
+    const row = target.closest("[data-ingredient-row]");
+    fetchIngredientOptions(target.value.trim(), row).catch(() => {});
   });
 
   form.addEventListener("submit", async (event) => {
@@ -396,9 +436,30 @@ document.addEventListener("DOMContentLoaded", () => {
       const amountValueRaw = row.querySelector('input[name="ingredient_amount_value"]')?.value;
       const amountUnit = row.querySelector('input[name="ingredient_amount_unit"]')?.value.trim() || "";
       const amountValue = Number(amountValueRaw);
-      const ingredientId = row.querySelector('input[name="ingredient_id"]')?.value.trim() || "";
-      const existingImagePath = row.querySelector('input[name="ingredient_existing_image_path"]')?.value || "";
+      const ingredientIdInput = row.querySelector('input[name="ingredient_id"]');
+      const existingImagePathInput = row.querySelector('input[name="ingredient_existing_image_path"]');
+      let ingredientId = ingredientIdInput?.value.trim() || "";
+      let existingImagePath = existingImagePathInput?.value || "";
       const imageFile = row.querySelector('input[name="ingredient_image"]')?.files?.[0] || null;
+
+      if (!ingredientId || !existingImagePath) {
+        try {
+          const existingIngredient = await findExistingIngredientByName(name);
+          if (existingIngredient?.id) {
+            ingredientId = existingIngredient.id;
+            if (ingredientIdInput) ingredientIdInput.value = ingredientId;
+          }
+          if (existingIngredient?.image_path && !existingImagePath) {
+            existingImagePath = existingIngredient.image_path;
+            if (existingImagePathInput) existingImagePathInput.value = existingImagePath;
+            const imageNameEl = row.querySelector("[data-image-name]");
+            setFileName(imageNameEl, null, "Current image selected");
+          }
+        } catch {
+          setStatus(`Could not verify existing ingredient "${name}".`, "error");
+          return;
+        }
+      }
 
       if (!amountValueRaw || !amountUnit) {
         setStatus(`Amount and unit are required for ingredient "${name}".`, "error");

@@ -68,7 +68,6 @@
     <section class="admin-builder-section" aria-label="Ingredients">
       <div class="admin-section-head">
         <h2>Ingredients</h2>
-        <button type="button" id="add-ingredient" class="admin-btn admin-btn-outline">+ Ingredient</button>
       </div>
       <div id="ingredients-list" class="admin-list-stack">
         <% recipe.ingredients.forEach(function(ingredient) { %>
@@ -91,13 +90,13 @@
           </div>
         <% }); %>
       </div>
+      <button type="button" id="add-ingredient" class="admin-btn admin-btn-outline">+ Ingredient</button>
       <datalist id="ingredient-options-list"></datalist>
     </section>
 
     <section class="admin-builder-section" aria-label="Instructions">
       <div class="admin-section-head">
         <h2>Instructions</h2>
-        <button type="button" id="add-step" class="admin-btn admin-btn-outline">+ Step</button>
       </div>
       <div id="steps-list" class="admin-list-stack">
         <% recipe.steps.forEach(function(step) { %>
@@ -110,12 +109,12 @@
           </div>
         <% }); %>
       </div>
+      <button type="button" id="add-step" class="admin-btn admin-btn-outline">+ Step</button>
     </section>
 
     <section class="admin-builder-section" aria-label="Tips">
       <div class="admin-section-head">
         <h2>Tips</h2>
-        <button type="button" id="add-tip" class="admin-btn admin-btn-outline">+ Tip</button>
       </div>
       <div id="tips-list" class="admin-list-stack">
         <% recipe.tips.forEach(function(tip) { %>
@@ -125,6 +124,7 @@
           </div>
         <% }); %>
       </div>
+      <button type="button" id="add-tip" class="admin-btn admin-btn-outline">+ Tip</button>
     </section>
 
     <div class="admin-form-actions">

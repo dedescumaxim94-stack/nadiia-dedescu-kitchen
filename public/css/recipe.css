@@ -60,6 +60,13 @@
   padding: 1rem;
 }
 
+.tips-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  background: var(--surface);
+}
+
 .ingredients-header {
   display: flex;
   align-items: center;
@@ -259,11 +266,11 @@
 }
 
 .tips-panel li {
-  border: 1px solid var(--line);
+  border: 1px solid var(--header-link-line);
   border-radius: 10px;
-  background: var(--tips-surface);
+  background: var(--header-link-bg);
   padding: 0.58rem 0.68rem;
-  color: #2b1d14;
+  color: var(--header-link-text);
 }
 
 @media (max-width: 980px) {
