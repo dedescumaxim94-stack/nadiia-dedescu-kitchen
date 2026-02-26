@@ -10,6 +10,17 @@ function excerptText(text, maxLength = 140) {
 }
 
 export function createPublicContentService({ supabase }) {
+  function toDisplayImagePath(value, defaultBucket = null) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (raw.startsWith("/") || /^https?:\/\//i.test(raw)) return raw;
+
+    const objectPath = defaultBucket && raw.startsWith(`${defaultBucket}/`) ? raw.slice(defaultBucket.length + 1) : raw;
+    if (!defaultBucket) return objectPath;
+    const { data } = supabase.storage.from(defaultBucket).getPublicUrl(objectPath);
+    return data?.publicUrl || objectPath;
+  }
+
   function buildRecipeMeta(prepMinutes, cookMinutes, serves) {
     const meta = [];
     if (prepMinutes !== null && prepMinutes !== undefined) meta.push(`⏱ ${prepMinutes} min Prep`);
@@ -35,7 +46,7 @@ export function createPublicContentService({ supabase }) {
       subtitle: recipe.subtitle || recipe.title,
       description: recipe.description || "",
       description_excerpt: excerptText(recipe.description, 125),
-      image: recipe.image_path || "/src/svg/logo.svg",
+      image: toDisplayImagePath(recipe.image_path, "recipe-images") || "/src/svg/logo.svg",
       alt: recipe.title,
       category_slug: category?.slug || "",
       category_title: category?.title || "",
@@ -120,7 +131,7 @@ export function createPublicContentService({ supabase }) {
       title: recipe.title,
       subtitle: recipe.subtitle || recipe.title,
       description: recipe.description,
-      image: recipe.image_path || "/src/svg/logo.svg",
+      image: toDisplayImagePath(recipe.image_path, "recipe-images") || "/src/svg/logo.svg",
       activePage: categorySlug,
       categoryTitle: category?.title || "",
       recipePageCSS: true,
@@ -130,7 +141,7 @@ export function createPublicContentService({ supabase }) {
       meta: buildRecipeMeta(recipe.prep_minutes, recipe.cook_minutes, recipe.serves),
       ingredients: (ingredientsRes.data || []).map((item) => ({
         name: item.ingredients?.name || "Ingredient",
-        image: item.ingredients?.image_path || "/src/svg/logo.svg",
+        image: toDisplayImagePath(item.ingredients?.image_path, "ingredient-images") || "/src/svg/logo.svg",
         amountValue: item.amount_value,
         amountUnit: item.amount_unit || null,
         amountText: item.amount_text || null,
@@ -150,7 +161,9 @@ export function createPublicContentService({ supabase }) {
       supabase.from("categories").select("slug, title").neq("slug", "new-recipes").order("title"),
       supabase
         .from("recipes")
-        .select("slug, title, subtitle, description, image_path, prep_minutes, cook_minutes, created_at, categories!inner(slug, title)")
+        .select(
+          "slug, title, subtitle, description, image_path, prep_minutes, cook_minutes, created_at, categories!inner(slug, title)",
+        )
         .eq("is_published", true)
         .order("created_at", { ascending: false })
         .limit(120),

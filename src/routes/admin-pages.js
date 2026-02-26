@@ -10,6 +10,7 @@ export function registerAdminPageRoutes(app, deps) {
     createPaginationViewModel,
     getRecipeAdminDetails,
     listAdminIngredients,
+    toDisplayImagePath,
   } = deps;
 
   app.get("/admin", requireAdminPage, async (req, res) => {
@@ -109,10 +110,7 @@ export function registerAdminPageRoutes(app, deps) {
   app.get("/admin/recipes/:id/edit", requireAdminPage, async (req, res) => {
     if (!supabaseAdmin) return res.status(503).send("Supabase write client is not configured.");
     try {
-      const [recipe, categories] = await Promise.all([
-        getRecipeAdminDetails(req.params.id),
-        getFormCategories(),
-      ]);
+      const [recipe, categories] = await Promise.all([getRecipeAdminDetails(req.params.id), getFormCategories()]);
       return renderAdminPage(res, "admin/recipe-form", {
         title: "Edit Recipe",
         adminTitle: "Edit Recipe",
@@ -191,9 +189,18 @@ export function registerAdminPageRoutes(app, deps) {
 
   app.get("/admin/ingredients/:id/edit", requireAdminPage, async (req, res) => {
     if (!supabaseAdmin) return res.status(503).send("Supabase write client is not configured.");
-    const { data, error } = await supabaseAdmin.from("ingredients").select("id, name, image_path").eq("id", req.params.id).maybeSingle();
+    const { data, error } = await supabaseAdmin
+      .from("ingredients")
+      .select("id, name, image_path")
+      .eq("id", req.params.id)
+      .maybeSingle();
     if (error) return res.status(400).send(`Ingredient lookup failed: ${error.message}`);
     if (!data?.id) return res.status(404).send("Ingredient not found.");
+
+    const ingredient = {
+      ...data,
+      image_path: toDisplayImagePath(data.image_path, "ingredient-images"),
+    };
 
     return renderAdminPage(res, "admin/ingredient-form", {
       title: "Edit Ingredient",
@@ -203,7 +210,7 @@ export function registerAdminPageRoutes(app, deps) {
       adminPrimaryAction: { href: "/admin/ingredients", label: "Back to Ingredients" },
       adminPageJS: "admin-ingredients.js",
       mode: "edit",
-      ingredient: data,
+      ingredient,
     });
   });
 }

@@ -15,6 +15,7 @@ export function registerAdminApiRoutes(app, deps) {
     listAdminIngredients,
     createIngredientFromRequestBody,
     updateIngredientFromRequestBody,
+    toDisplayImagePath,
   } = deps;
 
   app.get("/api/admin/recipes", requireAdminApi, async (req, res) => {
@@ -116,8 +117,7 @@ export function registerAdminApiRoutes(app, deps) {
     if (lookupError) return res.status(400).json({ error: `Recipe lookup failed: ${lookupError.message}` });
     if (!existing?.id) return res.status(404).json({ error: "Recipe not found." });
 
-    const nextIsPublished =
-      typeof req.body.is_published === "boolean" ? req.body.is_published : !Boolean(existing.is_published);
+    const nextIsPublished = typeof req.body.is_published === "boolean" ? req.body.is_published : !Boolean(existing.is_published);
 
     const { data: updated, error: updateError } = await supabaseAdmin
       .from("recipes")
@@ -166,7 +166,7 @@ export function registerAdminApiRoutes(app, deps) {
     });
 
     for (const imagePath of imagePaths) {
-      await deleteStorageObjectByPublicUrl(imagePath);
+      await deleteStorageObjectByPublicUrl(imagePath, "recipe-images");
     }
 
     return res.status(204).send();
@@ -212,10 +212,17 @@ export function registerAdminApiRoutes(app, deps) {
 
   app.get("/api/admin/ingredients/:id", requireAdminApi, async (req, res) => {
     if (!supabaseAdmin) return res.status(503).json({ error: "Supabase write client is not configured." });
-    const { data, error } = await supabaseAdmin.from("ingredients").select("id, name, image_path").eq("id", req.params.id).maybeSingle();
+    const { data, error } = await supabaseAdmin
+      .from("ingredients")
+      .select("id, name, image_path")
+      .eq("id", req.params.id)
+      .maybeSingle();
     if (error) return res.status(400).json({ error: `Ingredient lookup failed: ${error.message}` });
     if (!data?.id) return res.status(404).json({ error: "Ingredient not found." });
-    return res.json(data);
+    return res.json({
+      ...data,
+      image_path: toDisplayImagePath(data.image_path, "ingredient-images"),
+    });
   });
 
   app.patch("/api/admin/ingredients/:id", requireAdminApi, requireSameOrigin, requireCsrfApi, async (req, res) => {
@@ -263,35 +270,7 @@ export function registerAdminApiRoutes(app, deps) {
       metadata: { name: ingredient.name },
     });
 
-    await deleteStorageObjectByPublicUrl(ingredient.image_path);
+    await deleteStorageObjectByPublicUrl(ingredient.image_path, "ingredient-images");
     return res.status(204).send();
-  });
-
-  // Backward compatibility for one release cycle.
-  app.post("/api/recipes", requireAdminApi, requireSameOrigin, requireCsrfApi, async (req, res) => {
-    if (!supabaseAdmin) return res.status(503).json({ error: "Supabase write client is not configured." });
-    try {
-      const result = await createRecipeFromRequestBody(req.body);
-      await writeAdminAuditLog({
-        req,
-        action: "recipe.create.legacy_api",
-        entityType: "recipe",
-        entityId: result.id,
-        metadata: {
-          slug: result.slug,
-          category_slug: result.categorySlug,
-          is_published: result.isPublished,
-        },
-      });
-      return res.status(201).json({
-        id: result.id,
-        slug: result.slug,
-        link: `/categories/${result.categorySlug}/${result.slug}`,
-        editLink: `/admin/recipes/${result.id}/edit`,
-        is_published: result.isPublished,
-      });
-    } catch (error) {
-      return handleApiError(res, error, "Failed to create recipe.");
-    }
   });
 }

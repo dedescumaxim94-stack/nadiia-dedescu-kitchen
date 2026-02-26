@@ -123,6 +123,7 @@ registerAdminPageRoutes(app, {
   createPaginationViewModel: adminService.createPaginationViewModel,
   getRecipeAdminDetails: adminService.getRecipeAdminDetails,
   listAdminIngredients: adminService.listAdminIngredients,
+  toDisplayImagePath: adminService.toDisplayImagePath,
 });
 
 registerAdminApiRoutes(app, {
@@ -141,6 +142,7 @@ registerAdminApiRoutes(app, {
   listAdminIngredients: adminService.listAdminIngredients,
   createIngredientFromRequestBody: adminService.createIngredientFromRequestBody,
   updateIngredientFromRequestBody: adminService.updateIngredientFromRequestBody,
+  toDisplayImagePath: adminService.toDisplayImagePath,
 });
 
 registerPublicRoutes(app, {

@@ -2,6 +2,8 @@ import { randomUUID } from "crypto";
 
 const ADMIN_DEFAULT_PAGE_SIZE = 20;
 const ADMIN_MAX_PAGE_SIZE = 100;
+const RECIPE_IMAGE_BUCKET = "recipe-images";
+const INGREDIENT_IMAGE_BUCKET = "ingredient-images";
 const adminDateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "short",
@@ -168,33 +170,79 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     });
     if (error) throw new Error(`Upload failed for ${fieldName}: ${error.message}`);
 
-    const { data: publicUrlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath);
-    return publicUrlData.publicUrl;
+    return filePath;
   }
 
-  function getStorageObjectFromPublicUrl(publicUrl) {
-    if (!publicUrl || !supabaseUrl) return null;
-    try {
-      const origin = new URL(supabaseUrl).origin;
-      const prefix = `${origin}/storage/v1/object/public/`;
-      if (!publicUrl.startsWith(prefix)) return null;
-      const remainder = publicUrl.slice(prefix.length);
-      const firstSlash = remainder.indexOf("/");
-      if (firstSlash <= 0) return null;
-      return {
-        bucket: remainder.slice(0, firstSlash),
-        objectPath: remainder.slice(firstSlash + 1),
-      };
-    } catch {
-      return null;
+  function parseStorageImageReference(value, defaultBucket = null) {
+    const input = String(value || "").trim();
+    if (!input) return null;
+
+    if (input.startsWith("/")) {
+      return { type: "local", path: input };
     }
+
+    if (/^https?:\/\//i.test(input)) {
+      const matched = input.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/i);
+      if (matched?.[1] && matched?.[2]) {
+        return {
+          type: "storage",
+          bucket: matched[1],
+          objectPath: matched[2],
+        };
+      }
+      return { type: "url", url: input };
+    }
+
+    return {
+      type: "storage",
+      bucket: defaultBucket,
+      objectPath: input,
+    };
   }
 
-  async function deleteStorageObjectByPublicUrl(publicUrl) {
+  function normalizeStoredImagePath(value, defaultBucket = null) {
+    const parsed = parseStorageImageReference(value, defaultBucket);
+    if (!parsed) return null;
+    if (parsed.type === "storage") {
+      if (!parsed.objectPath) return null;
+      if (defaultBucket && parsed.objectPath.startsWith(`${defaultBucket}/`)) {
+        return parsed.objectPath.slice(defaultBucket.length + 1);
+      }
+      return parsed.objectPath;
+    }
+    if (parsed.type === "local") return parsed.path;
+    if (parsed.type === "url") return parsed.url;
+    return null;
+  }
+
+  function toDisplayImagePath(value, defaultBucket = null) {
+    const parsed = parseStorageImageReference(value, defaultBucket);
+    if (!parsed) return "";
+    if (parsed.type === "local") return parsed.path;
+    if (parsed.type === "url") return parsed.url;
+    if (!parsed.bucket || !parsed.objectPath) return parsed.objectPath || "";
+
+    const { data } = supabaseAdmin.storage.from(parsed.bucket).getPublicUrl(parsed.objectPath);
+    if (data?.publicUrl) return data.publicUrl;
+
+    if (supabaseUrl) {
+      try {
+        const origin = new URL(supabaseUrl).origin;
+        return `${origin}/storage/v1/object/public/${parsed.bucket}/${parsed.objectPath}`;
+      } catch {
+        return parsed.objectPath;
+      }
+    }
+
+    return parsed.objectPath;
+  }
+
+  async function deleteStorageObjectByPublicUrl(publicUrl, defaultBucket = null) {
     if (!supabaseAdmin || !publicUrl) return;
-    const parsed = getStorageObjectFromPublicUrl(publicUrl);
-    if (!parsed) return;
-    const { error } = await supabaseAdmin.storage.from(parsed.bucket).remove([parsed.objectPath]);
+    const parsed = parseStorageImageReference(publicUrl, defaultBucket);
+    if (!parsed || parsed.type !== "storage" || !parsed.bucket || !parsed.objectPath) return;
+    const objectPath = normalizeStoredImagePath(parsed.objectPath, parsed.bucket) || parsed.objectPath;
+    const { error } = await supabaseAdmin.storage.from(parsed.bucket).remove([objectPath]);
     if (error) {
       console.warn(`Storage cleanup skipped for ${publicUrl}:`, error.message);
     }
@@ -313,23 +361,23 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
   async function resolveRecipeImagePath({ slug, recipeImageBase64, existingRecipeImagePath }) {
     if (recipeImageBase64) {
       return uploadImageOrThrow({
-        bucket: "recipe-images",
+        bucket: RECIPE_IMAGE_BUCKET,
         folder: slug,
         fileBase64: recipeImageBase64,
         fieldName: "recipe image",
       });
     }
-    if (existingRecipeImagePath) return existingRecipeImagePath;
+    if (existingRecipeImagePath) return normalizeStoredImagePath(existingRecipeImagePath, RECIPE_IMAGE_BUCKET);
     throw createHttpError(400, "Recipe image is required.");
   }
 
   async function resolveIngredientPayloads({ slug, ingredients }) {
     const resolved = [];
     for (const ingredient of ingredients) {
-      let imagePath = ingredient.existing_image_path;
+      let imagePath = normalizeStoredImagePath(ingredient.existing_image_path, INGREDIENT_IMAGE_BUCKET);
       if (ingredient.image_base64) {
         imagePath = await uploadImageOrThrow({
-          bucket: "ingredient-images",
+          bucket: INGREDIENT_IMAGE_BUCKET,
           folder: slug,
           fileBase64: ingredient.image_base64,
           fieldName: `ingredient image (${ingredient.name})`,
@@ -493,7 +541,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     await replaceRecipeChildren(recipeId, ingredientPayloads, normalized.steps, normalized.tips);
 
     if (normalized.recipeImageBase64 && existingRecipe.image_path && existingRecipe.image_path !== recipeImagePath) {
-      await deleteStorageObjectByPublicUrl(existingRecipe.image_path);
+      await deleteStorageObjectByPublicUrl(existingRecipe.image_path, RECIPE_IMAGE_BUCKET);
     }
 
     return {
@@ -507,7 +555,9 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
   async function getRecipeAdminDetails(recipeId) {
     const { data: recipe, error: recipeError } = await supabaseAdmin
       .from("recipes")
-      .select("id, category_id, slug, title, subtitle, description, image_path, prep_minutes, cook_minutes, serves, is_published, categories(slug, title)")
+      .select(
+        "id, category_id, slug, title, subtitle, description, image_path, prep_minutes, cook_minutes, serves, is_published, categories(slug, title)",
+      )
       .eq("id", recipeId)
       .maybeSingle();
 
@@ -520,14 +570,18 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
         .select("position, amount_value, amount_unit, amount_text, ingredient_id, ingredients(name, image_path)")
         .eq("recipe_id", recipeId)
         .order("position", { ascending: true }),
-      supabaseAdmin.from("recipe_steps").select("step_number, title, body").eq("recipe_id", recipeId).order("step_number", { ascending: true }),
+      supabaseAdmin
+        .from("recipe_steps")
+        .select("step_number, title, body")
+        .eq("recipe_id", recipeId)
+        .order("step_number", { ascending: true }),
       supabaseAdmin.from("recipe_tips").select("position, tip").eq("recipe_id", recipeId).order("position", { ascending: true }),
     ]);
 
     if (ingredientsRes.error || stepsRes.error || tipsRes.error) {
       throw createHttpError(
         400,
-        ingredientsRes.error?.message || stepsRes.error?.message || tipsRes.error?.message || "Recipe detail query failed."
+        ingredientsRes.error?.message || stepsRes.error?.message || tipsRes.error?.message || "Recipe detail query failed.",
       );
     }
 
@@ -541,7 +595,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
       title: recipe.title,
       subtitle: recipe.subtitle || "",
       description: recipe.description,
-      image_path: recipe.image_path || "",
+      image_path: toDisplayImagePath(recipe.image_path, RECIPE_IMAGE_BUCKET),
       prep_minutes: recipe.prep_minutes,
       cook_minutes: recipe.cook_minutes,
       serves: recipe.serves,
@@ -549,7 +603,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
       ingredients: (ingredientsRes.data || []).map((item) => ({
         ingredient_id: item.ingredient_id,
         name: item.ingredients?.name || "",
-        image_path: item.ingredients?.image_path || "",
+        image_path: toDisplayImagePath(item.ingredients?.image_path, INGREDIENT_IMAGE_BUCKET),
         amount_value: item.amount_value,
         amount_unit: item.amount_unit || "",
         amount_text: item.amount_text || null,
@@ -590,7 +644,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     return (rows || []).map((row) => ({
       id: row.id,
       name: row.name,
-      image_path: row.image_path || "",
+      image_path: toDisplayImagePath(row.image_path, INGREDIENT_IMAGE_BUCKET),
       updated_at: row.updated_at,
       updated_label: formatDateLabel(row.updated_at),
     }));
@@ -608,8 +662,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
       return query;
     };
 
-    const baseSelect =
-      "id, slug, title, is_published, prep_minutes, cook_minutes, serves, updated_at, categories!inner(slug, title)";
+    const baseSelect = "id, slug, title, is_published, prep_minutes, cook_minutes, serves, updated_at, categories!inner(slug, title)";
 
     if (!hasSearch) {
       let query = supabaseAdmin.from("recipes").select(baseSelect, { count: "exact" });
@@ -717,7 +770,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
       }
       throw createHttpError(
         400,
-        `Recipe fuzzy search failed: ${fuzzyRowsRes.error?.message || fuzzyCountRes.error?.message || "Unknown error"}`
+        `Recipe fuzzy search failed: ${fuzzyRowsRes.error?.message || fuzzyCountRes.error?.message || "Unknown error"}`,
       );
     }
 
@@ -829,7 +882,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
           } else {
             throw createHttpError(
               400,
-              `Ingredient fuzzy search failed: ${fuzzyRowsRes.error?.message || fuzzyCountRes.error?.message || "Unknown error"}`
+              `Ingredient fuzzy search failed: ${fuzzyRowsRes.error?.message || fuzzyCountRes.error?.message || "Unknown error"}`,
             );
           }
         } else {
@@ -874,7 +927,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     if (!imageBase64) throw createHttpError(400, "Ingredient image is required.");
 
     const imagePath = await uploadImageOrThrow({
-      bucket: "ingredient-images",
+      bucket: INGREDIENT_IMAGE_BUCKET,
       folder: "ingredients",
       fileBase64: imageBase64,
       fieldName: `ingredient image (${name})`,
@@ -908,10 +961,10 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     if (existingError) throw createHttpError(400, `Ingredient lookup failed: ${existingError.message}`);
     if (!existing?.id) throw createHttpError(404, "Ingredient not found.");
 
-    let imagePath = existingImagePathBody || existing.image_path;
+    let imagePath = normalizeStoredImagePath(existingImagePathBody || existing.image_path, INGREDIENT_IMAGE_BUCKET);
     if (imageBase64) {
       imagePath = await uploadImageOrThrow({
-        bucket: "ingredient-images",
+        bucket: INGREDIENT_IMAGE_BUCKET,
         folder: "ingredients",
         fileBase64: imageBase64,
         fieldName: `ingredient image (${name})`,
@@ -933,7 +986,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     }
 
     if (imageBase64 && existing.image_path && existing.image_path !== imagePath) {
-      await deleteStorageObjectByPublicUrl(existing.image_path);
+      await deleteStorageObjectByPublicUrl(existing.image_path, INGREDIENT_IMAGE_BUCKET);
     }
 
     return data;
@@ -981,7 +1034,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
           recipesRes.error?.message ||
           publishedRecipesRes.error?.message ||
           draftRecipesRes.error?.message ||
-          ingredientsRes.error?.message
+          ingredientsRes.error?.message,
       );
       return { categories: 0, recipes: 0, publishedRecipes: 0, draftRecipes: 0, ingredients: 0 };
     }
@@ -1008,6 +1061,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     updateRecipeFromRequestBody,
     createIngredientFromRequestBody,
     updateIngredientFromRequestBody,
+    toDisplayImagePath,
     handleApiError,
     writeAdminAuditLog,
     getAdminDashboardCounts,
