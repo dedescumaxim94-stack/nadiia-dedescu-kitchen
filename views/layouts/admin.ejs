@@ -13,6 +13,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="<%= csrfToken || '' %>" />
   <title><%= title %> - Nadiia's Kitchen Admin</title>
+  <script>
+    (function () {
+      try {
+        const storedTheme = localStorage.getItem("ndk-theme");
+        if (storedTheme === "light" || storedTheme === "dark") {
+          document.documentElement.setAttribute("data-theme", storedTheme);
+        }
+      } catch {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/admin.css" />
 </head>
 <body class="admin-body">
@@ -44,6 +57,8 @@
         </div>
 
         <div class="admin-topbar-actions">
+          <a href="/" class="admin-btn admin-btn-outline">Homepage</a>
+
           <% if (safeAdminSearch && safeAdminSearch.action) { %>
             <form class="admin-topbar-search" method="get" action="<%= safeAdminSearch.action %>">
               <% if (safeAdminSearch.hidden) { %>
@@ -86,5 +101,44 @@
   <% if (safeAdminPageJS) { %>
     <script src="/js/<%= safeAdminPageJS %>"></script>
   <% } %>
+
+  <button type="button" class="admin-btn admin-btn-outline admin-theme-toggle" data-theme-toggle aria-label="Switch color theme" aria-pressed="false">
+    <span class="admin-theme-toggle-icon" data-theme-toggle-icon>🌙</span>
+    <span data-theme-toggle-text>Dark</span>
+  </button>
+
+  <script>
+    (function () {
+      const toggle = document.querySelector("[data-theme-toggle]");
+      const icon = document.querySelector("[data-theme-toggle-icon]");
+      const text = document.querySelector("[data-theme-toggle-text]");
+      if (!toggle || !icon || !text) return;
+
+      const getTheme = () => {
+        const explicit = document.documentElement.getAttribute("data-theme");
+        if (explicit === "light" || explicit === "dark") return explicit;
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      };
+
+      const renderTheme = (theme) => {
+        const isDark = theme === "dark";
+        icon.textContent = isDark ? "☀️" : "🌙";
+        text.textContent = isDark ? "Light" : "Dark";
+        toggle.setAttribute("aria-pressed", String(isDark));
+      };
+
+      toggle.addEventListener("click", () => {
+        const currentTheme = getTheme();
+        const nextTheme = currentTheme === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", nextTheme);
+        try {
+          localStorage.setItem("ndk-theme", nextTheme);
+        } catch {}
+        renderTheme(nextTheme);
+      });
+
+      renderTheme(getTheme());
+    })();
+  </script>
 </body>
 </html>

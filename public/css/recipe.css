@@ -40,9 +40,9 @@
 .meta-tags span {
   display: inline-flex;
   border-radius: 999px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--line);
   background: var(--surface-alt);
-  color: #1f2937;
+  color: var(--text);
   font-weight: 700;
   font-size: 0.84rem;
   padding: 0.28rem 0.6rem;
@@ -79,9 +79,9 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: #f8fafc;
+  background: var(--surface-alt);
   padding: 0.28rem 0.48rem;
 }
 
@@ -96,10 +96,10 @@
 .servings-btn {
   width: 28px;
   height: 28px;
-  border: 1px solid #94a3b8;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: #fff;
-  color: #1f2937;
+  background: var(--surface);
+  color: var(--text);
   font-weight: 700;
   cursor: pointer;
 }
@@ -107,12 +107,23 @@
 .servings-input {
   width: 54px;
   height: 28px;
-  border: 1px solid #94a3b8;
+  border: 1px solid var(--line);
   border-radius: 999px;
   text-align: center;
-  background: #fff;
-  color: #1f2937;
+  background: var(--surface);
+  color: var(--text);
   font-weight: 700;
+}
+
+.servings-input::-webkit-outer-spin-button,
+.servings-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.servings-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .ingredients-visual-grid {
@@ -123,9 +134,9 @@
 
 .ingredient-item {
   margin: 0;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface);
   overflow: hidden;
   cursor: pointer;
   transition:
@@ -141,8 +152,13 @@
 }
 
 .ingredient-item.has-ingredient {
-  background: var(--success-bg);
-  border-color: var(--success-line);
+  background: var(--ingredient-selected-bg);
+  border-color: var(--ingredient-selected-line);
+}
+
+.ingredient-item.has-ingredient .ingredient-name,
+.ingredient-item.has-ingredient .ingredient-amount {
+  color: #1a2601;
 }
 
 .ingredient-item::after {
@@ -153,7 +169,7 @@
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--ingredient-selected-icon);
   color: #fff;
   font-size: 0.72rem;
   display: flex;
@@ -173,7 +189,7 @@
   width: 100%;
   height: 98px;
   object-fit: contain;
-  background: #fff;
+  background: var(--surface);
   padding: 0.4rem;
 }
 
@@ -201,12 +217,12 @@
 }
 
 .steps-list li {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface);
   padding: 0.75rem 0.78rem;
   line-height: 1.55;
-  color: #111827;
+  color: var(--text);
   cursor: pointer;
   list-style-position: outside;
   transition:
@@ -214,19 +230,24 @@
     background-color 0.2s ease;
 }
 
+.steps-list li::marker {
+  color: var(--text-muted);
+}
+
 .steps-list li:hover {
-  border-color: #93c5fd;
+  border-color: var(--primary);
 }
 
 .steps-list li.completed-step {
-  background: var(--success-bg);
-  border-color: var(--success-line);
+  background: var(--ingredient-selected-bg);
+  border-color: var(--ingredient-selected-line);
+  color: #1a2601;
 }
 
 .steps-list strong {
   display: block;
   margin-bottom: 0.25rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .tips-panel ul {
@@ -238,11 +259,11 @@
 }
 
 .tips-panel li {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--tips-surface);
   padding: 0.58rem 0.68rem;
-  color: #1f2937;
+  color: #2b1d14;
 }
 
 @media (max-width: 980px) {

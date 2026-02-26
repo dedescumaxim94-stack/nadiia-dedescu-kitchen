@@ -38,6 +38,12 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     return fallback;
   }
 
+  function parseUuidOrNull(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return null;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(raw) ? raw : null;
+  }
+
   function formatDateLabel(value) {
     if (!value) return "-";
     const date = new Date(value);
@@ -274,6 +280,19 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     }
   }
 
+  async function ensureUniqueRecipeTitle(rawTitle, excludeRecipeId = null) {
+    const title = String(rawTitle || "").trim();
+    if (!title) throw createHttpError(400, "Recipe title is required.");
+
+    let query = supabaseAdmin.from("recipes").select("id, title").ilike("title", title).limit(1);
+    if (excludeRecipeId) query = query.neq("id", excludeRecipeId);
+    const { data, error } = await query;
+    if (error) throw createHttpError(400, `Recipe title check failed: ${error.message}`);
+    if ((data || []).length > 0) {
+      throw createHttpError(409, `Recipe title \"${title}\" already exists.`);
+    }
+  }
+
   function normalizeRecipeWriteInput(body) {
     const categorySlug = String(body.category || "").trim();
     const title = String(body.title || "").trim();
@@ -296,6 +315,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     const ingredients = Array.isArray(body.ingredients)
       ? body.ingredients
           .map((item, index) => ({
+            ingredient_id: parseUuidOrNull(item.ingredient_id),
             name: String(item.name || "").trim(),
             amount_value: parseNumberOrNull(item.amount_value),
             amount_unit: String(item.amount_unit || "").trim(),
@@ -386,6 +406,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
       if (!imagePath) throw createHttpError(400, `Image is required for ingredient "${ingredient.name}".`);
 
       resolved.push({
+        ingredient_id: ingredient.ingredient_id,
         name: ingredient.name,
         amount_value: ingredient.amount_value,
         amount_unit: ingredient.amount_unit,
@@ -398,6 +419,19 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
   }
 
   async function upsertIngredientAndGetId({ name, imagePath }) {
+    const { data: existingByName, error: existingByNameError } = await supabaseAdmin
+      .from("ingredients")
+      .select("id")
+      .ilike("name", name)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingByNameError && existingByNameError.code !== "PGRST116") {
+      throw createHttpError(400, `Ingredient lookup failed for \"${name}\": ${existingByNameError.message}`);
+    }
+
+    if (existingByName?.id) return existingByName.id;
+
     const { data, error } = await supabaseAdmin
       .from("ingredients")
       .upsert({ name, image_path: imagePath }, { onConflict: "name", ignoreDuplicates: false })
@@ -421,7 +455,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
 
     const recipeIngredientsRows = [];
     for (const item of normalizedIngredients) {
-      const ingredientId = await upsertIngredientAndGetId({ name: item.name, imagePath: item.image_path });
+      const ingredientId = item.ingredient_id || (await upsertIngredientAndGetId({ name: item.name, imagePath: item.image_path }));
       recipeIngredientsRows.push({
         recipe_id: recipeId,
         ingredient_id: ingredientId,
@@ -455,6 +489,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
   async function createRecipeFromRequestBody(body) {
     if (!supabaseAdmin) throw createHttpError(503, "Recipe writes are disabled.");
     const normalized = normalizeRecipeWriteInput(body);
+    await ensureUniqueRecipeTitle(normalized.title);
     const categoryId = await getCategoryIdBySlugOrThrow(normalized.categorySlug);
     const slug = await ensureUniqueRecipeSlug(body.slug || normalized.title);
     const recipeImagePath = await resolveRecipeImagePath({
@@ -512,6 +547,7 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
     if (!existingRecipe?.id) throw createHttpError(404, "Recipe not found.");
 
     const normalized = normalizeRecipeWriteInput(body);
+    await ensureUniqueRecipeTitle(normalized.title, recipeId);
     const categoryId = await getCategoryIdBySlugOrThrow(normalized.categorySlug);
     const slug = await ensureUniqueRecipeSlug(body.slug || normalized.title, recipeId);
     const recipeImagePath = await resolveRecipeImagePath({

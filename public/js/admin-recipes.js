@@ -1,10 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const csrfToken =
-    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-  const withCsrfHeaders = (baseHeaders = {}) =>
-    csrfToken
-      ? { ...baseHeaders, "X-CSRF-Token": csrfToken }
-      : baseHeaders;
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const withCsrfHeaders = (baseHeaders = {}) => (csrfToken ? { ...baseHeaders, "X-CSRF-Token": csrfToken } : baseHeaders);
 
   const parseJsonOrThrow = async (response) => {
     const json = await response.json().catch(() => ({}));
@@ -42,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
               method: "PATCH",
               headers: withCsrfHeaders({ "Content-Type": "application/json" }),
               body: JSON.stringify({ is_published: nextState }),
-            })
+            }),
           );
           window.location.reload();
         } catch (error) {
@@ -84,10 +80,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const stepsList = document.getElementById("steps-list");
   const tipsList = document.getElementById("tips-list");
   const statusEl = document.getElementById("admin-recipe-status");
+  const titleInput = form.querySelector('input[name="title"]');
   const recipeImageInput = form.querySelector('input[name="recipe_image"]');
   const recipeImageName = form.querySelector("[data-recipe-image-name]");
   const publishIntentInput = form.querySelector('input[name="publish_intent"]');
+  const ingredientOptionsList = document.getElementById("ingredient-options-list");
+  const recipeTitleOptionsList = document.getElementById("recipe-title-options-list");
   let submitIntent = publishIntentInput?.value === "publish" ? "publish" : "draft";
+  const ingredientCatalogByName = new Map();
+  const recipeCatalogByTitle = new Map();
+  let ingredientSearchTimer = null;
+  let recipeSearchTimer = null;
 
   const setStatus = (message, type = "") => {
     if (!statusEl) return;
@@ -102,7 +105,8 @@ document.addEventListener("DOMContentLoaded", () => {
     row.innerHTML = `
       <div class="ingredient-main">
         <div class="ingredient-fields">
-          <input type="text" name="ingredient_name" placeholder="Ingredient name" required />
+          <input type="text" name="ingredient_name" placeholder="Ingredient name" list="ingredient-options-list" required />
+          <input type="hidden" name="ingredient_id" value="" />
           <input type="number" name="ingredient_amount_value" min="0" step="0.01" placeholder="Amount" required />
           <input type="text" name="ingredient_amount_unit" placeholder="Unit" required />
         </div>
@@ -116,6 +120,104 @@ document.addEventListener("DOMContentLoaded", () => {
       <button type="button" class="admin-btn admin-btn-danger" data-remove-row>Remove</button>
     `;
     return row;
+  };
+
+  const syncIngredientSelectionForRow = (row) => {
+    if (!row) return;
+    const nameInput = row.querySelector('input[name="ingredient_name"]');
+    const ingredientIdInput = row.querySelector('input[name="ingredient_id"]');
+    const existingPathInput = row.querySelector('input[name="ingredient_existing_image_path"]');
+    const imageNameEl = row.querySelector("[data-image-name]");
+    if (!nameInput || !ingredientIdInput) return;
+
+    const key = nameInput.value.trim().toLowerCase();
+    const selected = ingredientCatalogByName.get(key);
+    if (!selected) {
+      ingredientIdInput.value = "";
+      return;
+    }
+
+    ingredientIdInput.value = selected.id || "";
+    if ((!existingPathInput?.value || existingPathInput.value.trim() === "") && selected.image_path) {
+      if (existingPathInput) existingPathInput.value = selected.image_path;
+      setFileName(imageNameEl, null, "Current image selected");
+    }
+  };
+
+  const renderIngredientOptions = (items) => {
+    if (!ingredientOptionsList) return;
+    ingredientOptionsList.innerHTML = "";
+    const seen = new Set();
+
+    for (const item of items || []) {
+      const name = String(item.name || "").trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      ingredientCatalogByName.set(key, {
+        id: item.id || "",
+        name,
+        image_path: item.image_path || "",
+      });
+
+      const option = document.createElement("option");
+      option.value = name;
+      ingredientOptionsList.appendChild(option);
+    }
+  };
+
+  const fetchIngredientOptions = async (search = "") => {
+    const query = new URLSearchParams({
+      page_size: "100",
+      page: "1",
+    });
+    if (search.trim()) query.set("search", search.trim());
+
+    const response = await fetch(`/api/admin/ingredients?${query.toString()}`, {
+      headers: withCsrfHeaders(),
+    });
+    const payload = await parseJsonOrThrow(response);
+    renderIngredientOptions(payload.items || []);
+  };
+
+  const renderRecipeTitleOptions = (items) => {
+    if (!recipeTitleOptionsList) return;
+    recipeTitleOptionsList.innerHTML = "";
+    const seen = new Set();
+
+    for (const item of items || []) {
+      const title = String(item.title || "").trim();
+      if (!title) continue;
+      const key = title.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      recipeCatalogByTitle.set(key, {
+        id: item.id || "",
+        title,
+      });
+
+      const option = document.createElement("option");
+      option.value = title;
+      recipeTitleOptionsList.appendChild(option);
+    }
+  };
+
+  const fetchRecipeTitleOptions = async (search = "") => {
+    const query = new URLSearchParams({
+      page_size: "100",
+      page: "1",
+      status: "all",
+    });
+    if (search.trim()) query.set("search", search.trim());
+
+    const response = await fetch(`/api/admin/recipes?${query.toString()}`, {
+      headers: withCsrfHeaders(),
+    });
+    const payload = await parseJsonOrThrow(response);
+    renderRecipeTitleOptions(payload.items || []);
   };
 
   const stepRowTemplate = () => {
@@ -162,6 +264,14 @@ document.addEventListener("DOMContentLoaded", () => {
     stepsList.appendChild(stepRowTemplate());
   }
 
+  fetchIngredientOptions().catch(() => {
+    setStatus("Could not load existing ingredients for autocomplete.", "error");
+  });
+
+  fetchRecipeTitleOptions().catch(() => {
+    setStatus("Could not load existing recipe titles.", "error");
+  });
+
   form.addEventListener("click", (event) => {
     const submitBtn = event.target.closest("[data-submit-intent]");
     if (submitBtn) {
@@ -192,6 +302,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = event.target;
     if (!(target instanceof HTMLInputElement)) return;
 
+    if (target.name === "ingredient_name") {
+      syncIngredientSelectionForRow(target.closest("[data-ingredient-row]"));
+      return;
+    }
+
     if (target.name === "recipe_image") {
       const fallback = form.querySelector('input[name="existing_recipe_image_path"]')?.value
         ? "Current image selected"
@@ -202,13 +317,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (target.name === "ingredient_image") {
       const nameEl = target.closest(".ingredient-image-control")?.querySelector("[data-image-name]");
-      const fallback = target
-        .closest(".ingredient-image-control")
-        ?.querySelector('input[name="ingredient_existing_image_path"]')
+      const fallback = target.closest(".ingredient-image-control")?.querySelector('input[name="ingredient_existing_image_path"]')
         ?.value
         ? "Current image selected"
         : "No file selected";
       setFileName(nameEl, target.files?.[0], fallback);
+    }
+  });
+
+  form.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (target.name === "ingredient_name") {
+      syncIngredientSelectionForRow(target.closest("[data-ingredient-row]"));
+
+      const value = target.value.trim();
+      if (ingredientSearchTimer) window.clearTimeout(ingredientSearchTimer);
+      ingredientSearchTimer = window.setTimeout(() => {
+        fetchIngredientOptions(value).catch(() => {});
+      }, 180);
+      return;
+    }
+
+    if (target.name === "title") {
+      const value = target.value.trim();
+      if (recipeSearchTimer) window.clearTimeout(recipeSearchTimer);
+      recipeSearchTimer = window.setTimeout(() => {
+        fetchRecipeTitleOptions(value).catch(() => {});
+      }, 180);
     }
   });
 
@@ -218,6 +354,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const mode = form.dataset.mode || "create";
     const recipeId = form.dataset.recipeId || "";
+    const currentTitle = titleInput?.value.trim() || "";
+
+    if (mode === "create") {
+      const existingRecipe = recipeCatalogByTitle.get(currentTitle.toLowerCase());
+      if (existingRecipe?.id) {
+        const goToEdit = window.confirm(
+          `Recipe title \"${currentTitle}\" already exists. Do you want to open it for editing instead?`,
+        );
+        if (goToEdit) {
+          window.location.href = `/admin/recipes/${existingRecipe.id}/edit`;
+          return;
+        }
+        setStatus(`Recipe title \"${currentTitle}\" already exists.`, "error");
+        return;
+      }
+    }
 
     const recipeImageFile = recipeImageInput?.files?.[0] || null;
     const existingRecipeImagePath = form.querySelector('input[name="existing_recipe_image_path"]')?.value || "";
@@ -244,6 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const amountValueRaw = row.querySelector('input[name="ingredient_amount_value"]')?.value;
       const amountUnit = row.querySelector('input[name="ingredient_amount_unit"]')?.value.trim() || "";
       const amountValue = Number(amountValueRaw);
+      const ingredientId = row.querySelector('input[name="ingredient_id"]')?.value.trim() || "";
       const existingImagePath = row.querySelector('input[name="ingredient_existing_image_path"]')?.value || "";
       const imageFile = row.querySelector('input[name="ingredient_image"]')?.files?.[0] || null;
 
@@ -273,6 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       ingredients.push({
+        ingredient_id: ingredientId || null,
         name,
         amount_value: amountValue,
         amount_unit: amountUnit,

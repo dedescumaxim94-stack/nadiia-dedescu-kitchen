@@ -17,6 +17,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><%= title %> - Nadiia's Kitchen</title>
+  <script>
+    (function () {
+      try {
+        const storedTheme = localStorage.getItem("ndk-theme");
+        if (storedTheme === "light" || storedTheme === "dark") {
+          document.documentElement.setAttribute("data-theme", storedTheme);
+        }
+      } catch {}
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -100,6 +110,11 @@
       <%- body %>
     </div>
   </div>
+
+  <button type="button" class="theme-toggle site-theme-toggle" data-theme-toggle aria-label="Switch color theme" aria-pressed="false">
+    <span class="theme-toggle-icon" data-theme-toggle-icon>🌙</span>
+    <span data-theme-toggle-text>Dark</span>
+  </button>
 
   <script src="/js/script.js"></script>
   <% if (typeof newRecipePageJS !== 'undefined' && newRecipePageJS) { %>

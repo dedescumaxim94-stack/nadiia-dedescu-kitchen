@@ -10,8 +10,10 @@
 
     <label>
       Ingredient Name
-      <input type="text" name="name" value="<%= ingredient.name || '' %>" required />
+      <input type="text" name="name" value="<%= ingredient.name || '' %>" list="ingredient-name-options-list" required />
     </label>
+
+    <datalist id="ingredient-name-options-list"></datalist>
 
     <div class="input-group">
       <span class="field-label">Ingredient Image</span>

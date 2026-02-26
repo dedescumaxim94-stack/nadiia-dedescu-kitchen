@@ -37,13 +37,13 @@
 
 .login-form input {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--line);
   border-radius: 10px;
   min-height: 42px;
   padding: 0.52rem 0.72rem;
   font: inherit;
   color: var(--text);
-  background: #fff;
+  background: var(--surface);
 }
 
 .login-form button {

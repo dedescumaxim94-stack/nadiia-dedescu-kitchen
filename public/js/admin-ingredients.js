@@ -1,10 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const csrfToken =
-    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-  const withCsrfHeaders = (baseHeaders = {}) =>
-    csrfToken
-      ? { ...baseHeaders, "X-CSRF-Token": csrfToken }
-      : baseHeaders;
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const withCsrfHeaders = (baseHeaders = {}) => (csrfToken ? { ...baseHeaders, "X-CSRF-Token": csrfToken } : baseHeaders);
 
   const parseJsonOrThrow = async (response) => {
     const json = await response.json().catch(() => ({}));
@@ -57,11 +53,52 @@ document.addEventListener("DOMContentLoaded", () => {
   const imageInput = form.querySelector('input[name="image"]');
   const imageNameEl = form.querySelector("[data-ingredient-image-name]");
   const existingImagePathInput = form.querySelector('input[name="existing_image_path"]');
+  const nameInput = form.querySelector('input[name="name"]');
+  const ingredientOptionsList = document.getElementById("ingredient-name-options-list");
+  const ingredientCatalogByName = new Map();
+  let ingredientSearchTimer = null;
 
   const setStatus = (message, type = "") => {
     if (!statusEl) return;
     statusEl.textContent = message;
     statusEl.className = `admin-form-status ${type}`.trim();
+  };
+
+  const renderIngredientNameOptions = (items) => {
+    if (!ingredientOptionsList) return;
+    ingredientOptionsList.innerHTML = "";
+    ingredientCatalogByName.clear();
+
+    for (const item of items || []) {
+      const name = String(item.name || "").trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (ingredientCatalogByName.has(key)) continue;
+
+      ingredientCatalogByName.set(key, {
+        id: item.id || "",
+        name,
+      });
+
+      const option = document.createElement("option");
+      option.value = name;
+      ingredientOptionsList.appendChild(option);
+    }
+  };
+
+  const fetchIngredientNameOptions = async (search = "") => {
+    const query = new URLSearchParams({
+      page_size: "100",
+      page: "1",
+      status: "all",
+    });
+    if (search.trim()) query.set("search", search.trim());
+
+    const response = await fetch(`/api/admin/ingredients?${query.toString()}`, {
+      headers: withCsrfHeaders(),
+    });
+    const payload = await parseJsonOrThrow(response);
+    renderIngredientNameOptions(payload.items || []);
   };
 
   form.addEventListener("click", (event) => {
@@ -75,6 +112,22 @@ document.addEventListener("DOMContentLoaded", () => {
     imageNameEl.textContent = imageInput.files?.[0]?.name || fallback;
   });
 
+  fetchIngredientNameOptions().catch(() => {
+    setStatus("Could not load existing ingredient names.", "error");
+  });
+
+  form.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (target.name !== "name") return;
+
+    const value = target.value.trim();
+    if (ingredientSearchTimer) window.clearTimeout(ingredientSearchTimer);
+    ingredientSearchTimer = window.setTimeout(() => {
+      fetchIngredientNameOptions(value).catch(() => {});
+    }, 180);
+  });
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     setStatus("Saving ingredient...");
@@ -84,6 +137,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const name = form.querySelector('input[name="name"]')?.value.trim() || "";
     const existingImagePath = existingImagePathInput?.value || "";
     const imageFile = imageInput?.files?.[0] || null;
+    const currentName = nameInput?.value.trim() || "";
+
+    if (mode === "create") {
+      const existingIngredient = ingredientCatalogByName.get(currentName.toLowerCase());
+      if (existingIngredient?.id) {
+        const goToEdit = window.confirm(`Ingredient \"${currentName}\" already exists. Do you want to open it for editing instead?`);
+        if (goToEdit) {
+          window.location.href = `/admin/ingredients/${existingIngredient.id}/edit`;
+          return;
+        }
+        setStatus(`Ingredient \"${currentName}\" already exists.`, "error");
+        return;
+      }
+    }
 
     if (!name) {
       setStatus("Ingredient name is required.", "error");
@@ -120,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method,
           headers: withCsrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(payload),
-        })
+        }),
       );
       setStatus("Saved. Redirecting...", "success");
       window.location.href = "/admin/ingredients";

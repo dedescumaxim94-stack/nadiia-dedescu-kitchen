@@ -3,8 +3,10 @@
 }
 
 .category-banner {
-  background: radial-gradient(circle at 8% 15%, #ffffff 0, transparent 32%), linear-gradient(130deg, #f9fafb 0%, #e5e7eb 100%);
-  border: 1px solid #cbd5e1;
+  background:
+    radial-gradient(circle at 8% 15%, var(--page-bg-soft) 0, transparent 32%),
+    linear-gradient(130deg, var(--surface) 0%, var(--section-bg) 100%);
+  border: 1px solid var(--line);
 }
 
 .category-banner h2 {

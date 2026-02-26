@@ -32,6 +32,79 @@ function initSideMenu() {
   });
 }
 
+function initThemeToggle() {
+  const toggleBtn = document.querySelector("[data-theme-toggle]");
+  const iconEl = document.querySelector("[data-theme-toggle-icon]");
+  const textEl = document.querySelector("[data-theme-toggle-text]");
+  const root = document.documentElement;
+  const STORAGE_KEY = "ndk-theme";
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+  const getStoredTheme = () => {
+    try {
+      const value = localStorage.getItem(STORAGE_KEY);
+      return value === "light" || value === "dark" ? value : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getActiveTheme = () => {
+    const explicit = root.getAttribute("data-theme");
+    if (explicit === "light" || explicit === "dark") return explicit;
+    return mediaQuery.matches ? "dark" : "light";
+  };
+
+  const applyTheme = (theme, persist = false) => {
+    if (theme === "light" || theme === "dark") {
+      root.setAttribute("data-theme", theme);
+      if (persist) {
+        try {
+          localStorage.setItem(STORAGE_KEY, theme);
+        } catch {}
+      }
+    } else {
+      root.removeAttribute("data-theme");
+      if (persist) {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {}
+      }
+    }
+  };
+
+  const syncButton = () => {
+    if (!toggleBtn) return;
+    const activeTheme = getActiveTheme();
+    const nextTheme = activeTheme === "dark" ? "light" : "dark";
+    toggleBtn.setAttribute("aria-pressed", activeTheme === "dark" ? "true" : "false");
+    toggleBtn.setAttribute("aria-label", `Switch to ${nextTheme} mode`);
+    if (iconEl) iconEl.textContent = activeTheme === "dark" ? "☀️" : "🌙";
+    if (textEl) textEl.textContent = activeTheme === "dark" ? "Light" : "Dark";
+  };
+
+  if (!root.getAttribute("data-theme")) {
+    const storedTheme = getStoredTheme();
+    if (storedTheme) applyTheme(storedTheme, false);
+  }
+
+  syncButton();
+
+  toggleBtn?.addEventListener("click", () => {
+    const current = getActiveTheme();
+    const next = current === "dark" ? "light" : "dark";
+    applyTheme(next, true);
+    syncButton();
+  });
+
+  mediaQuery.addEventListener("change", () => {
+    if (!getStoredTheme()) {
+      root.removeAttribute("data-theme");
+      syncButton();
+    }
+  });
+}
+
 function initRecipeChecklist() {
   const canVibrate = Boolean(navigator.vibrate);
   document.addEventListener("click", (event) => {
@@ -123,6 +196,7 @@ function initServingsScaling() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initThemeToggle();
   initSideMenu();
   initRecipeChecklist();
   initServingsScaling();

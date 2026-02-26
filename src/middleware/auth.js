@@ -66,13 +66,7 @@ export function createAuthMiddleware({
   }
 
   function clearAuthCookie(res) {
-    const cookieParts = [
-      `${authCookieName}=`,
-      "Path=/",
-      "HttpOnly",
-      "SameSite=Lax",
-      "Max-Age=0",
-    ];
+    const cookieParts = [`${authCookieName}=`, "Path=/", "HttpOnly", "SameSite=Lax", "Max-Age=0"];
     if (nodeEnv === "production") cookieParts.push("Secure");
     appendSetCookie(res, cookieParts.join("; "));
   }
@@ -93,10 +87,7 @@ export function createAuthMiddleware({
     const cookieToken = getCsrfTokenFromRequest(req);
     if (!cookieToken) return false;
     const headerToken = String(req.get("x-csrf-token") || "").trim();
-    const bodyToken =
-      req.body && typeof req.body._csrf === "string"
-        ? req.body._csrf.trim()
-        : "";
+    const bodyToken = req.body && typeof req.body._csrf === "string" ? req.body._csrf.trim() : "";
     const providedToken = headerToken || bodyToken;
     return Boolean(providedToken && providedToken === cookieToken);
   }
@@ -143,7 +134,9 @@ export function createAuthMiddleware({
   }
 
   function getClientIp(req) {
-    const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+    const forwarded = String(req.headers["x-forwarded-for"] || "")
+      .split(",")[0]
+      .trim();
     return forwarded || req.ip || req.socket?.remoteAddress || "unknown";
   }
 
