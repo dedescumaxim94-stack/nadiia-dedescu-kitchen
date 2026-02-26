@@ -1,32 +1,19 @@
-<% 
-const categoryPageCSS = true;
-%>
-<main>
-  <section class="recipe-container">
+<main class="category-page">
+  <section class="category-banner" aria-label="Category intro">
+    <p class="eyebrow">Recipe Collection</p>
+    <h2><%= title %></h2>
+    <p>Explore published recipes in this category.</p>
+  </section>
+
+  <section class="home-section" aria-label="Category recipes">
     <% if (recipes && recipes.length) { %>
-      <% recipes.forEach(function(recipe) { %>
-        <article class="recipe-card">
-          <figure>
-            <img src="<%= recipe.image %>" alt="<%= recipe.alt || recipe.title %>" />
-          </figure>
-          <div class="recipe-content">
-            <h3>
-              <a href="<%= recipe.link %>" class="main-link"><%= recipe.title %></a>
-            </h3>
-            <% if (recipe.description) { %>
-              <p><%= recipe.description %></p>
-            <% } %>
-            <% if (recipe.time) { %>
-              <p>
-                Ready in:
-                <time datetime="<%= recipe.timeISO || '' %>"><%= recipe.time %></time>
-              </p>
-            <% } %>
-          </div>
-        </article>
-      <% }); %>
+      <div class="recipe-grid">
+        <% recipes.forEach(function(recipe) { %>
+          <%- include('../partials/recipe-card', { recipe: recipe }) %>
+        <% }); %>
+      </div>
     <% } else { %>
-      <p>No recipes yet. Check back soon!</p>
+      <p class="empty-state">No recipes yet. Check back soon.</p>
     <% } %>
   </section>
 </main>

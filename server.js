@@ -144,9 +144,11 @@ registerAdminApiRoutes(app, {
 });
 
 registerPublicRoutes(app, {
+  getHomePageData: publicContentService.getHomePageData,
   getRecipeDetails: publicContentService.getRecipeDetails,
   getCategoryBySlug: publicContentService.getCategoryBySlug,
   getRecipesByCategory: publicContentService.getRecipesByCategory,
+  getFormCategories: publicContentService.getFormCategories,
 });
 
 app.listen(PORT, "0.0.0.0", () => {

@@ -1,75 +1,33 @@
-function initCarousel() {
-  const track = document.querySelector(".carousel-track");
-  if (!track) return;
-
-  const nextBtn = document.querySelector(".next-btn");
-  const prevBtn = document.querySelector(".prev-btn");
-  const items = Array.from(track.children);
-  if (!nextBtn || !prevBtn || items.length === 0) return;
-
-  let currentIndex = 0;
-
-  const moveToSlide = (index) => {
-    const itemWidth = items[0].getBoundingClientRect().width;
-    track.style.transform = `translateX(-${index * itemWidth}px)`;
-  };
-
-  const maxIndex = Math.max(0, items.length - 5);
-
-  nextBtn.addEventListener("click", () => {
-    currentIndex = currentIndex < maxIndex ? currentIndex + 1 : 0;
-    moveToSlide(currentIndex);
-  });
-
-  prevBtn.addEventListener("click", () => {
-    currentIndex = currentIndex > 0 ? currentIndex - 1 : maxIndex;
-    moveToSlide(currentIndex);
-  });
-
-  window.addEventListener("resize", () => {
-    moveToSlide(currentIndex);
-  });
-}
-
 function initSideMenu() {
   const sideMenu = document.querySelector(".side-menu");
-  const gridContainer = document.querySelector(".grid-container");
-  const menuIcons = document.querySelectorAll(".menu-icon-btn");
-  if (!sideMenu || !gridContainer || menuIcons.length === 0) return;
+  const siteShell = document.querySelector(".site-shell");
+  const openBtn = document.querySelector(".menu-open-btn");
+  const closeBtn = document.querySelector(".menu-close-btn");
+  const backdrop = document.querySelector(".menu-backdrop");
+  if (!sideMenu || !siteShell || !openBtn || !closeBtn || !backdrop) return;
 
-  const closeAllDropdowns = () => {
-    sideMenu.querySelectorAll(".dropdown").forEach((drop) => drop.classList.remove("open"));
+  const setMenuState = (isOpen) => {
+    sideMenu.classList.toggle("open", isOpen);
+    siteShell.classList.toggle("menu-open", isOpen);
+    document.body.classList.toggle("menu-open", isOpen);
+    openBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
   };
 
-  const openDefaultDropdown = () => {
-    const firstDropdown = sideMenu.querySelector(".dropdown");
-    firstDropdown?.classList.add("open");
-  };
+  openBtn.addEventListener("click", () => setMenuState(true));
+  closeBtn.addEventListener("click", () => setMenuState(false));
+  backdrop.addEventListener("click", () => setMenuState(false));
 
-  menuIcons.forEach((icon) => {
-    icon.addEventListener("click", () => {
-      const isOpening = !sideMenu.classList.contains("open");
-      sideMenu.classList.toggle("open");
-      gridContainer.classList.toggle("menu-open");
-      if (isOpening) {
-        openDefaultDropdown();
-      } else {
-        closeAllDropdowns();
-      }
-    });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setMenuState(false);
   });
 
-  document.addEventListener("click", (event) => {
-    if (event.target.closest(".side-menu") || event.target.closest(".menu-icon-btn")) return;
-    sideMenu.classList.remove("open");
-    gridContainer.classList.remove("menu-open");
-    closeAllDropdowns();
-  });
-
-  sideMenu.querySelectorAll(".menu-title").forEach((title) => {
-    title.addEventListener("click", () => {
-      closeAllDropdowns();
-      title.nextElementSibling?.classList.add("open");
+  document.querySelectorAll(".menu-title").forEach((titleBtn) => {
+    titleBtn.addEventListener("click", () => {
+      const nextExpanded = titleBtn.getAttribute("aria-expanded") !== "true";
+      titleBtn.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+      const listId = titleBtn.getAttribute("aria-controls");
+      const dropdown = listId ? document.getElementById(listId) : titleBtn.nextElementSibling;
+      dropdown?.classList.toggle("open", nextExpanded);
     });
   });
 }
@@ -165,7 +123,6 @@ function initServingsScaling() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  initCarousel();
   initSideMenu();
   initRecipeChecklist();
   initServingsScaling();

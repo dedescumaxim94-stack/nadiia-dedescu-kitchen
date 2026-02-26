@@ -1,0 +1,22 @@
+<article class="recipe-card">
+  <a href="<%= recipe.link %>" class="recipe-card-media-link" aria-label="Open recipe <%= recipe.title %>">
+    <img src="<%= recipe.image %>" alt="<%= recipe.alt || recipe.title %>" class="recipe-card-media" loading="lazy" />
+  </a>
+  <div class="recipe-card-body">
+    <% if (recipe.category_title) { %>
+      <p class="recipe-card-category"><%= recipe.category_title %></p>
+    <% } %>
+    <h3 class="recipe-card-title">
+      <a href="<%= recipe.link %>"><%= recipe.title %></a>
+    </h3>
+    <% if (recipe.description_excerpt) { %>
+      <p class="recipe-card-description"><%= recipe.description_excerpt %></p>
+    <% } %>
+    <div class="recipe-card-meta">
+      <% if (recipe.time) { %>
+        <time datetime="<%= recipe.timeISO || '' %>"><%= recipe.time %></time>
+      <% } %>
+      <a href="<%= recipe.link %>" class="recipe-card-cta">View Recipe</a>
+    </div>
+  </div>
+</article>

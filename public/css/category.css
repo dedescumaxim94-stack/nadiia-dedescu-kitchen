@@ -1,107 +1,19 @@
-/* =========================================
-  Recipe container Styles
-   ========================================= */
-.recipe-container {
-  grid-column: 2 / span 6;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: min-content;
-  gap: 1.5rem;
-  align-content: start;
-  padding: 1rem 2rem;
-  background-color: #d6ccc2;
-  box-shadow: inset 0 0 10px 5px #6c584c51;
-  border-radius: 8px;
+.category-page {
+  gap: 1rem;
 }
 
-/* =========================================
-  Recipe Cards Styles
-   ========================================= */
-
-.recipe-card {
-  position: relative; /* Boundary for the click area */
-  display: flex;
-  flex-direction: column;
-  border-radius: 8px;
-  background-color: #ffffff; /* Or a subtle color like #f9f9f9 for contrast */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Optional: Adds depth even without hover */
-  overflow: hidden; /* Prevents content from spilling out */
-  border: 1px solid #ddd; /* Adds a subtle border for card definition */
-  transition: box-shadow 0.3s ease;
+.category-banner {
+  background: radial-gradient(circle at 8% 15%, #ffffff 0, transparent 32%), linear-gradient(130deg, #f9fafb 0%, #e5e7eb 100%);
+  border: 1px solid #cbd5e1;
 }
 
-/* Make the whole card feel clickable with a hover effect */
-.recipe-card:hover {
-  box-shadow: 0 8px 24px #6c584c86;
-  cursor: pointer;
+.category-banner h2 {
+  margin-top: 0.28rem;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
 }
 
-.recipe-card > figure {
-  width: 100%; /* Or a specific size like 350px */
-  height: 150px; /* Fixed height for uniformity */
-  margin: 0; /* Removes default browser margins on figures */
-  overflow: hidden;
-}
-
-.recipe-card > figure img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Ensures the image covers the area without distortion */
-  overflow: hidden;
-  display: block;
-}
-
-.recipe-content {
-  padding: 1rem; /* Adds space around the text */
-  flex: 1; /* Makes it fill remaining space in the flex column */
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem; /* Space between title, description, and time */
-}
-
-.recipe-content h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.recipe-content p {
-  margin: 0;
-  line-height: 1.4;
-  color: #555; /* Optional: Softer text color */
-}
-
-.main-link::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1; /* Ensures the click layer is on top of everything */
-}
-
-/* =========================================
-  @ Media Queries
-   ========================================= */
-
-@media (max-width: 1024px) {
-  .recipe-container {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .recipe-container {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .recipe-container {
-    grid-column: 1 / -1;
-    grid-template-columns: 1fr;
-    padding: 1rem;
-  }
+.category-banner p {
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  max-width: 65ch;
 }

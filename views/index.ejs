@@ -1,43 +1,78 @@
-<main>
-  <nav class="categories">
-    <a href="/categories/breakfast" class="cat-card">
-      <img src="/src/images/Breakfast.PNG" alt="Breakfast" class="cat-image" />
-      <h2 class="cat-title">Breakfast</h2>
-    </a>
-    <a href="/categories/lunch" class="cat-card">
-      <img src="/src/images/Lunch.PNG" alt="Lunch" class="cat-image" />
-      <h2 class="cat-title">Lunch</h2>
-    </a>
-    <a href="/categories/dinner" class="cat-card">
-      <img src="/src/images/Dinner.PNG" alt="Dinner" class="cat-image" />
-      <h2 class="cat-title">Dinner</h2>
-    </a>
-    <a href="/categories/dessert" class="cat-card">
-      <img src="/src/images/Dessert.PNG" alt="Dessert" class="cat-image" />
-      <h2 class="cat-title">Dessert</h2>
-    </a>
-    <a href="/categories/set-menu" class="cat-card">
-      <img src="/src/images/Set-Menu.PNG" alt="Set Menus" class="cat-image" />
-      <h2 class="cat-title">Set Menus</h2>
-    </a>
-  </nav>
+<main class="home-page">
+  <% if (navCategories && navCategories.length) { %>
+    <section class="home-section" aria-label="Browse categories">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Browse</p>
+          <h2>Categories</h2>
+        </div>
+      </div>
+      <nav class="category-chip-list">
+        <% navCategories.forEach(function(category) { %>
+          <a href="/categories/<%= category.slug %>" class="category-chip"><%= category.title %></a>
+        <% }); %>
+      </nav>
+    </section>
+  <% } %>
 
-  <!-- Carousel -->
-  <div class="carousel-container" aria-label="Food Images">
-    <button class="carousel-button prev-btn" aria-label="previus slide"></button>
-    <div class="carousel-viewport">
-      <ul class="carousel-track">
-        <li class="carousel-item">
-          <img src="/src/images/breakfast/Ricotta-Pancakes.png" alt="Cheese Pancake" />
-        </li>
-        <li class="carousel-item"><img src="/src/images/lunch/stake.png" alt="" /></li>
-        <li class="carousel-item"><img src="/src/images/breakfast/Ricotta-Pancakes.png" alt="" /></li>
-        <li class="carousel-item"><img src="/src/images/lunch/stake.png" alt="" /></li>
-        <li class="carousel-item"><img src="/src/images/breakfast/Ricotta-Pancakes.png" alt="" /></li>
-        <li class="carousel-item"><img src="/src/images/lunch/stake.png" alt="" /></li>
-        <li class="carousel-item"><img src="/src/images/breakfast/Ricotta-Pancakes.png" alt="" /></li>
-      </ul>
+  <% if (featuredRecipe) { %>
+    <section class="hero-card" aria-label="Featured recipe">
+      <a href="<%= featuredRecipe.link %>" class="hero-media-link">
+        <img src="<%= featuredRecipe.image %>" alt="<%= featuredRecipe.alt || featuredRecipe.title %>" class="hero-media" />
+      </a>
+      <div class="hero-copy">
+        <p class="eyebrow">Featured Recipe</p>
+        <h2><%= featuredRecipe.title %></h2>
+        <p><%= featuredRecipe.description_excerpt || featuredRecipe.description %></p>
+        <div class="hero-meta">
+          <% if (featuredRecipe.category_title) { %>
+            <span><%= featuredRecipe.category_title %></span>
+          <% } %>
+          <% if (featuredRecipe.time) { %>
+            <span><%= featuredRecipe.time %></span>
+          <% } %>
+        </div>
+        <a class="btn btn-primary" href="<%= featuredRecipe.link %>">Cook This Recipe</a>
+      </div>
+    </section>
+  <% } %>
+
+  <section class="home-section" aria-label="Latest recipes">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Fresh Content</p>
+        <h2>Latest Recipes</h2>
+      </div>
     </div>
-    <button class="carousel-button next-btn" aria-label="next slide"></button>
-  </div>
+
+    <% if (latestRecipes && latestRecipes.length) { %>
+      <div class="recipe-grid">
+        <% latestRecipes.forEach(function(recipe) { %>
+          <%- include('partials/recipe-card', { recipe: recipe }) %>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <p class="empty-state">No published recipes yet. Add recipes from admin and they will appear here.</p>
+    <% } %>
+  </section>
+
+  <% if (categorySections && categorySections.length) { %>
+    <% categorySections.forEach(function(section) { %>
+      <section class="home-section" aria-label="<%= section.title %>">
+        <div class="section-head section-head-inline">
+          <div>
+            <p class="eyebrow">Category</p>
+            <h2><%= section.title %></h2>
+          </div>
+          <a class="text-link" href="/categories/<%= section.slug %>">View all</a>
+        </div>
+
+        <div class="recipe-scroll-grid">
+          <% section.recipes.forEach(function(recipe) { %>
+            <%- include('partials/recipe-card', { recipe: recipe }) %>
+          <% }); %>
+        </div>
+      </section>
+    <% }); %>
+  <% } %>
 </main>
