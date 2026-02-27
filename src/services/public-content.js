@@ -31,11 +31,14 @@ export function createPublicContentService({ supabase }) {
 
   function mapAmount(row) {
     // Show amount_text if set and not '0' or 0
-    if (row.amount_text && row.amount_text !== '0' && row.amount_text !== 0) return row.amount_text;
+    if (row.amount_text && row.amount_text !== "0" && row.amount_text !== 0) return row.amount_text;
     // If value is 0 and unit is set, show only the unit
     if (
-      (row.amount_value === 0 || row.amount_value === '0') &&
-      row.amount_unit && row.amount_unit !== '' && row.amount_unit !== null && row.amount_unit !== undefined
+      (row.amount_value === 0 || row.amount_value === "0") &&
+      row.amount_unit &&
+      row.amount_unit !== "" &&
+      row.amount_unit !== null &&
+      row.amount_unit !== undefined
     ) {
       return `${row.amount_unit}`;
     }
@@ -43,21 +46,18 @@ export function createPublicContentService({ supabase }) {
     if (
       row.amount_value !== null &&
       row.amount_value !== undefined &&
-      row.amount_value !== '' &&
+      row.amount_value !== "" &&
       row.amount_value !== 0 &&
-      row.amount_unit && row.amount_unit !== ''
+      row.amount_unit &&
+      row.amount_unit !== ""
     ) {
       return `${row.amount_value} ${row.amount_unit}`;
     }
     // Show only value if set and not 0/null/undefined/empty string
-    if (
-      row.amount_value !== null &&
-      row.amount_value !== undefined &&
-      row.amount_value !== '' &&
-      row.amount_value !== 0
-    ) return `${row.amount_value}`;
+    if (row.amount_value !== null && row.amount_value !== undefined && row.amount_value !== "" && row.amount_value !== 0)
+      return `${row.amount_value}`;
     // Show only unit if set and not empty/null/undefined
-    if (row.amount_unit && row.amount_unit !== '' && row.amount_unit !== null && row.amount_unit !== undefined) {
+    if (row.amount_unit && row.amount_unit !== "" && row.amount_unit !== null && row.amount_unit !== undefined) {
       return `${row.amount_unit}`;
     }
     return null;
