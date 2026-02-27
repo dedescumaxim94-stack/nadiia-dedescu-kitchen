@@ -30,11 +30,36 @@ export function createPublicContentService({ supabase }) {
   }
 
   function mapAmount(row) {
-    if (row.amount_text) return row.amount_text;
-    if (row.amount_value !== null && row.amount_value !== undefined && row.amount_unit) {
+    // Show amount_text if set and not '0' or 0
+    if (row.amount_text && row.amount_text !== '0' && row.amount_text !== 0) return row.amount_text;
+    // If value is 0 and unit is set, show only the unit
+    if (
+      (row.amount_value === 0 || row.amount_value === '0') &&
+      row.amount_unit && row.amount_unit !== '' && row.amount_unit !== null && row.amount_unit !== undefined
+    ) {
+      return `${row.amount_unit}`;
+    }
+    // Show value and unit if value is not 0/null/undefined/empty string and unit is set
+    if (
+      row.amount_value !== null &&
+      row.amount_value !== undefined &&
+      row.amount_value !== '' &&
+      row.amount_value !== 0 &&
+      row.amount_unit && row.amount_unit !== ''
+    ) {
       return `${row.amount_value} ${row.amount_unit}`;
     }
-    if (row.amount_value !== null && row.amount_value !== undefined) return `${row.amount_value}`;
+    // Show only value if set and not 0/null/undefined/empty string
+    if (
+      row.amount_value !== null &&
+      row.amount_value !== undefined &&
+      row.amount_value !== '' &&
+      row.amount_value !== 0
+    ) return `${row.amount_value}`;
+    // Show only unit if set and not empty/null/undefined
+    if (row.amount_unit && row.amount_unit !== '' && row.amount_unit !== null && row.amount_unit !== undefined) {
+      return `${row.amount_unit}`;
+    }
     return null;
   }
 
@@ -139,14 +164,17 @@ export function createPublicContentService({ supabase }) {
       prepMinutes: recipe.prep_minutes,
       cookMinutes: recipe.cook_minutes,
       meta: buildRecipeMeta(recipe.prep_minutes, recipe.cook_minutes, recipe.serves),
-      ingredients: (ingredientsRes.data || []).map((item) => ({
-        name: item.ingredients?.name || "Ingredient",
-        image: toDisplayImagePath(item.ingredients?.image_path, "ingredient-images") || "/src/svg/logo.svg",
-        amountValue: item.amount_value,
-        amountUnit: item.amount_unit || null,
-        amountText: item.amount_text || null,
-        amount: mapAmount(item),
-      })),
+      ingredients: (ingredientsRes.data || []).map((item) => {
+        const mappedAmount = mapAmount(item);
+        return {
+          name: item.ingredients?.name || "Ingredient",
+          image: toDisplayImagePath(item.ingredients?.image_path, "ingredient-images") || "/src/svg/logo.svg",
+          amountValue: item.amount_value,
+          amountUnit: item.amount_unit || null,
+          amountText: item.amount_text || null,
+          amount: mappedAmount,
+        };
+      }),
       instructions: (stepsRes.data || []).map((step) => ({
         title: step.title,
         text: step.body,

@@ -49,9 +49,9 @@
                 <small
                   class="ingredient-amount"
                   data-ingredient-amount
-                  data-amount-value="<%= ingredient.amountValue ?? '' %>"
-                  data-amount-unit="<%= ingredient.amountUnit ?? '' %>"
                   data-original-amount="<%= ingredient.amount %>"
+                  data-amount-value="<%= ingredient.amountValue != null ? ingredient.amountValue : '' %>"
+                  data-amount-unit="<%= ingredient.amountUnit != null ? ingredient.amountUnit : '' %>"
                 ><%= ingredient.amount %></small>
               <% } %>
             </figcaption>

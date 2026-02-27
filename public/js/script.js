@@ -165,6 +165,12 @@ function initServingsScaling() {
       const amountUnit = String(node.getAttribute("data-amount-unit") || "").trim();
       const originalAmount = String(node.getAttribute("data-original-amount") || "").trim();
 
+      // If originalAmount is a special string (not a number and not value+unit), use it as fallback
+      const isSpecial = !amountValue && originalAmount && isNaN(Number(originalAmount));
+      if (isSpecial) {
+        node.textContent = originalAmount;
+        return;
+      }
       if (Number.isFinite(amountValue)) {
         node.textContent = `${formatScaledAmount(amountValue * ratio)}${amountUnit ? ` ${amountUnit}` : ""}`;
       } else {
