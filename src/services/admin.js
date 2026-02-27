@@ -330,8 +330,9 @@ export function createAdminService({ supabaseAdmin, supabaseUrl }) {
 
     const seenIngredientNames = new Set();
     for (const ingredient of ingredients) {
-      if (ingredient.amount_value === null || ingredient.amount_value < 0 || !ingredient.amount_unit) {
-        throw createHttpError(400, `Amount value and unit are required for ingredient "${ingredient.name}".`);
+      // Amount value and unit are now optional. Only check if value is present and negative.
+      if (ingredient.amount_value !== null && ingredient.amount_value !== undefined && ingredient.amount_value < 0) {
+        throw createHttpError(400, `Amount value cannot be negative for ingredient "${ingredient.name}".`);
       }
       const key = ingredient.name.toLowerCase();
       if (seenIngredientNames.has(key)) {

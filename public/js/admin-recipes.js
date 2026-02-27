@@ -107,8 +107,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="ingredient-fields">
           <input type="text" name="ingredient_name" placeholder="Ingredient name" list="ingredient-options-list" required />
           <input type="hidden" name="ingredient_id" value="" />
-          <input type="number" name="ingredient_amount_value" min="0" step="0.01" placeholder="Amount" required />
-          <input type="text" name="ingredient_amount_unit" placeholder="Unit" required />
+          <input type="number" name="ingredient_amount_value" min="0" step="0.01" placeholder="Amount" />
+          <input type="text" name="ingredient_amount_unit" placeholder="Unit" />
         </div>
         <div class="ingredient-image-control">
           <button type="button" class="admin-btn admin-btn-outline image-trigger-btn" data-image-trigger>+ Add Image</button>
@@ -461,8 +461,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      if (!amountValueRaw || !amountUnit) {
-        setStatus(`Amount and unit are required for ingredient "${name}".`, "error");
+      // Amount value and unit are now optional. Only check if value is present and negative.
+      if (amountValueRaw && (!Number.isFinite(amountValue) || amountValue < 0)) {
+        setStatus(`Amount value cannot be negative for ingredient "${name}".`, "error");
         return;
       }
 

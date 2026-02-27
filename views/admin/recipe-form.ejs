@@ -76,8 +76,8 @@
               <div class="ingredient-fields">
                 <input type="text" name="ingredient_name" value="<%= ingredient.name %>" placeholder="Ingredient name" list="ingredient-options-list" required />
                 <input type="hidden" name="ingredient_id" value="<%= ingredient.ingredient_id || '' %>" />
-                <input type="number" name="ingredient_amount_value" min="0" step="0.01" value="<%= ingredient.amount_value %>" placeholder="Amount" required />
-                <input type="text" name="ingredient_amount_unit" value="<%= ingredient.amount_unit %>" placeholder="Unit" required />
+                <input type="number" name="ingredient_amount_value" min="0" step="0.01" value="<%= ingredient.amount_value %>" placeholder="Amount" />
+                <input type="text" name="ingredient_amount_unit" value="<%= ingredient.amount_unit %>" placeholder="Unit" />
               </div>
               <div class="ingredient-image-control">
                 <button type="button" class="admin-btn admin-btn-outline image-trigger-btn" data-image-trigger>+ Add Image</button>

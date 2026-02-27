@@ -38,8 +38,8 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="ingredient-main">
         <div class="ingredient-fields">
           <input type="text" name="ingredient_name" placeholder="Ingredient name" required />
-          <input type="number" name="ingredient_amount_value" min="0" step="0.01" placeholder="Amount (e.g. 1.5)" required />
-          <input type="text" name="ingredient_amount_unit" placeholder="Unit (e.g. cup, tbsp, g)" required />
+          <input type="number" name="ingredient_amount_value" min="0" step="0.01" placeholder="Amount (e.g. 1.5)" />
+          <input type="text" name="ingredient_amount_unit" placeholder="Unit (e.g. cup, tbsp, g)" />
         </div>
         <div class="ingredient-image-control">
           <button type="button" class="outline-btn image-trigger-btn" data-image-trigger>+ Add Image</button>
@@ -159,8 +159,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const imageFile = row.querySelector('input[name="ingredient_image"]')?.files?.[0] || null;
       const amountValue = Number(amountValueInput);
 
-      if (!amountValueInput || !amountUnit) {
-        setStatus(`Amount and unit are required for ingredient "${name}".`, "error");
+      // Amount value and unit are now optional. Only check if value is present and negative.
+      if (amountValueInput && (!Number.isFinite(amountValue) || amountValue < 0)) {
+        setStatus(`Amount value cannot be negative for ingredient "${name}".`, "error");
         return;
       }
 
